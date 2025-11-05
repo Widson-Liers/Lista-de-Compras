@@ -1,263 +1,256 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lista de Compras 🛒</title>
-
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png" type="image/png">
-<meta name="theme-color" content="#2563eb">
-
-<style>
-  body {
-    font-family: Inter, Arial, sans-serif;
-    background: #f3f4f6;
-    margin: 0;
-    padding: 20px;
-  }
-
-  .card {
-    max-width: 900px;
-    margin: auto;
-    background: #fff;
-    padding: 16px;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,.08);
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 22px;
-    color: #111;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 12px;
-  }
-
-  th, td {
-    padding: 3px 10px; /* 🔹 Mantém espaçamento entre colunas */
-    font-size: 14px;
-    line-height: 1; /* 🔹 Diminui altura real das linhas */
-  }
-
-  th {
-    background: #f9fafb;
-    text-align: left;
-  }
-
-  tr + tr td {
-    border-top: none; /* 🔹 Remove as linhas divisórias */
-  }
-
-  input[type=text], input[type=number] {
-    width: 100%;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    padding: 2px 5px; /* 🔹 Campos mais baixos */
-    font-size: 14px;
-  }
-
-  input.readonly {
-    background: #f8fafc;
-  }
-
-  .actions {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 10px;
-  }
-
-  button {
-    border: none;
-    padding: 8px 12px;
-    border-radius: 8px;
-    color: #fff;
-    background: #2563eb;
-    cursor: pointer;
-    font-size: 14px;
-  }
-
-  button:hover {
-    opacity: 0.9;
-  }
-
-  .btn-danger {
-    background: #dc2626;
-  }
-
-  .icon-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-  }
-
-  .icon-btn svg {
-    width: 20px;
-    height: 20px;
-    fill: #dc2626;
-  }
-
-  .total-line {
-    text-align: right;
-    font-weight: bold;
-    margin-top: 6px;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Compras</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4CAF50">
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0; padding: 0;
+      background: #f7f7f7; color: #333;
+      display: flex; flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background: #4CAF50; color: white;
+      text-align: center; padding: 1rem;
+      font-size: 1.4rem;
+    }
+    main { flex: 1; padding: 1rem; }
+    table {
+      width: 100%;
+      border-spacing: 0 0.5rem;
+    }
+    th, td { text-align: left; padding: 0.5rem; }
+    th.num, td.num { text-align: right; }
+    tr {
+      background: white; border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    input[type="text"], input[type="number"] {
+      width: 100%; border: 1px solid #ccc;
+      border-radius: 4px; padding: 0.4rem;
+      font-size: 1rem;
+    }
+    input:focus { outline: 2px solid #4CAF50; }
+    button {
+      border: none; border-radius: 6px;
+      padding: 0.6rem 1rem; cursor: pointer;
+      font-size: 1rem;
+      background: #4CAF50; color: white;
+      transition: background 0.2s;
+    }
+    button:hover { background: #43A047; }
+    button.delete-btn {
+      background: none; color: #e53935;
+      padding: 0.4rem;
+    }
+    button.delete-btn:hover { color: #b71c1c; }
+    .toolbar {
+      display: flex; flex-wrap: wrap;
+      gap: 0.5rem; justify-content: center;
+      padding: 1rem; background: white;
+      border-top: 1px solid #ddd;
+    }
+    @media (max-width: 600px) {
+      th:nth-child(1), td:nth-child(1) { width: 45%; }
+      th:nth-child(2), th:nth-child(3), th:nth-child(4) { width: 15%; }
+      th:nth-child(5) { width: 10%; }
+    }
+    .total-geral {
+      text-align: right; margin-top: 1rem;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-<div class="card">
-  <h1>🛒 Lista de Compras</h1>
-  <table>
-    <thead>
-      <tr>
-        <th style="width:50%">Produto</th>
-        <th style="width:15%">Qtd</th>
-        <th style="width:15%">Valor</th>
-        <th style="width:15%">Total</th>
-        <th style="width:5%"></th>
-      </tr>
-    </thead>
-    <tbody id="lista"></tbody>
-  </table>
-  <div class="total-line">Total geral: R$ <span id="totalGeral">0.00</span></div>
-
-  <div class="actions">
-    <button id="add">➕ Adicionar</button>
-    <button id="save">💾 Salvar</button>
-    <button id="load">📂 Carregar</button>
-    <button id="pdf">🧾 PDF</button>
-    <button id="clear" class="btn-danger">🧹 Limpar</button>
-    <input type="file" id="fileInput" accept=".json" style="display:none">
+  <header>🛒 Lista de Compras</header>
+  <main>
+    <table id="tabela">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th class="num">Qtd</th>
+          <th class="num">Valor</th>
+          <th class="num">Total</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="total-geral" id="totalGeral"></div>
+  </main>
+  <div class="toolbar">
+    <button id="addBtn" title="Adicionar linha" aria-label="Adicionar">➕ Adicionar</button>
+    <button id="saveBtn" title="Salvar JSON" aria-label="Salvar">💾 Salvar</button>
+    <button id="loadBtn" title="Carregar JSON" aria-label="Carregar">📂 Carregar</button>
+    <button id="clearBtn" title="Limpar lista" aria-label="Limpar">🧹 Limpar</button>
+    <button id="pdfBtn" title="Gerar PDF" aria-label="Gerar PDF">📄 PDF</button>
   </div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <!-- Bibliotecas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<script>
-const lista = document.getElementById('lista');
-const totalGeralEl = document.getElementById('totalGeral');
-const STORAGE_KEY = 'lista_compras_v2';
-let itens = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  <script>
+    const tbody = document.querySelector('#tabela tbody');
+    const totalGeralEl = document.getElementById('totalGeral');
 
-function salvarLocal() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(itens));
-}
+    function salvarLocalStorage() {
+      const linhas = [...tbody.querySelectorAll('tr')].map(tr => {
+        const [produto, qtd, valor] = tr.querySelectorAll('input');
+        return {
+          produto: produto.value.trim(),
+          qtd: qtd.value ? parseFloat(qtd.value) : '',
+          valor: valor.value ? parseFloat(valor.value) : ''
+        };
+      });
+      localStorage.setItem('listaCompras', JSON.stringify(linhas));
+    }
 
-function atualizarTotais() {
-  let totalGeral = 0;
-  itens.forEach((item, i) => {
-    const linha = lista.children[i];
-    const total = (Number(item.qtd) || 0) * (Number(item.valor) || 0);
-    linha.querySelector('.total').value = total ? total.toFixed(2) : '';
-    totalGeral += total;
-  });
-  totalGeralEl.textContent = totalGeral.toFixed(2);
-  salvarLocal();
-}
+    function carregarLocalStorage() {
+      const dados = JSON.parse(localStorage.getItem('listaCompras') || '[]');
+      if (dados.length === 0) addLinha();
+      else dados.forEach(d => addLinha(d));
+    }
 
-function criarLinha(item = {}, index) {
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><input type="text" value="${item.produto || ''}" placeholder="Produto" class="produto"></td>
-    <td><input type="number" value="${item.qtd || ''}" min="0" class="qtd"></td>
-    <td><input type="number" value="${item.valor || ''}" min="0" step="0.01" class="valor"></td>
-    <td><input type="number" readonly class="total readonly"></td>
-    <td><button class="icon-btn" title="Excluir"><svg viewBox="0 0 24 24"><path d="M9 3V4H4V6H5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V6H20V4H15V3H9ZM7 6H17V19H7V6ZM9 8V17H11V8H9ZM13 8V17H15V8H13Z"/></svg></button></td>
-  `;
+    function addLinha(item = { produto:'', qtd:'', valor:'' }) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" value="${item.produto}" aria-label="Produto"></td>
+        <td><input type="number" value="${item.qtd}" aria-label="Quantidade"></td>
+        <td><input type="number" step="0.01" value="${item.valor}" aria-label="Valor"></td>
+        <td class="num total"></td>
+        <td><button class="delete-btn" title="Excluir" aria-label="Excluir linha">
+          🗑️
+        </button></td>
+      `;
+      tbody.appendChild(tr);
 
-  tr.querySelector('.produto').addEventListener('input', e => {
-    itens[index].produto = e.target.value;
-    atualizarTotais();
-  });
-  tr.querySelector('.qtd').addEventListener('input', e => {
-    itens[index].qtd = e.target.value;
-    atualizarTotais();
-  });
-  tr.querySelector('.valor').addEventListener('input', e => {
-    itens[index].valor = e.target.value;
-    atualizarTotais();
-  });
-  tr.querySelector('.icon-btn').addEventListener('click', () => {
-    const temDado = (itens[index].produto || itens[index].qtd || itens[index].valor);
-    if (temDado && !confirm("Deseja realmente excluir esta linha?")) return;
-    itens.splice(index, 1);
-    render();
-  });
+      const [produto, qtd, valor] = tr.querySelectorAll('input');
+      const totalCell = tr.querySelector('.total');
 
-  lista.appendChild(tr);
-}
+      function atualizarTotal() {
+        const q = parseFloat(qtd.value);
+        const v = parseFloat(valor.value);
+        if (!isNaN(q) && !isNaN(v)) totalCell.textContent = (q * v).toFixed(2);
+        else totalCell.textContent = '';
+        atualizarTotalGeral();
+        salvarLocalStorage();
+      }
 
-function render() {
-  lista.innerHTML = '';
-  itens.forEach((item, i) => criarLinha(item, i));
-  atualizarTotais();
-}
+      produto.addEventListener('input', salvarLocalStorage);
+      qtd.addEventListener('input', atualizarTotal);
+      valor.addEventListener('input', atualizarTotal);
 
-document.getElementById('add').onclick = () => {
-  itens.push({ produto: '', qtd: '', valor: '' });
-  render();
-};
-document.getElementById('clear').onclick = () => {
-  if (confirm("Deseja apagar toda a lista?")) {
-    itens = [];
-    render();
-  }
-};
-document.getElementById('save').onclick = () => {
-  if (!itens.length) return alert("Nada para salvar!");
-  const nome = prompt("Nome do arquivo:", "lista-compras") || "lista-compras";
-  const blob = new Blob([JSON.stringify(itens, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = nome + ".json";
-  a.click();
-};
-document.getElementById('load').onclick = () => document.getElementById('fileInput').click();
-document.getElementById('fileInput').onchange = e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const r = new FileReader();
-  r.onload = ev => {
-    try {
-      itens = JSON.parse(ev.target.result);
-      render();
-    } catch (err) { alert("Arquivo inválido"); }
-  };
-  r.readAsText(file);
-  e.target.value = '';
-};
-document.getElementById('pdf').onclick = async () => {
-  if (!itens.length) return alert("Nada para gerar PDF!");
-  const nome = prompt("Nome do PDF:", "lista-compras") || "lista-compras";
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  doc.text("Lista de Compras", 40, 40);
-  const rows = itens.map(i => [i.produto, i.qtd || '', i.valor || '', i.qtd && i.valor ? (i.qtd * i.valor).toFixed(2) : '']);
-  doc.autoTable({
-    head: [["Produto", "Qtd", "Valor (R$)", "Total (R$)"]],
-    body: rows,
-    startY: 60,
-    styles: { fontSize: 10 },
-    headStyles: { fillColor: [37, 99, 235], textColor: 255 }
-  });
-  const total = itens.reduce((s, i) => s + (i.qtd && i.valor ? (i.qtd * i.valor) : 0), 0);
-  doc.text(`Total Geral: R$ ${total.toFixed(2)}`, 40, doc.lastAutoTable.finalY + 20);
-  doc.save(nome + ".pdf");
-};
+      tr.querySelector('.delete-btn').addEventListener('click', () => {
+        const temDados = produto.value || qtd.value || valor.value;
+        if (!temDados || confirm('Excluir esta linha?')) {
+          tr.remove();
+          atualizarTotalGeral();
+          salvarLocalStorage();
+        }
+      });
 
-if (itens.length === 0) itens = [{ produto: '', qtd: '', valor: '' }];
-render();
+      atualizarTotal();
+      produto.focus();
+    }
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
-}
-</script>
+    function atualizarTotalGeral() {
+      let total = 0;
+      tbody.querySelectorAll('tr').forEach(tr => {
+        const val = parseFloat(tr.querySelector('.total').textContent);
+        if (!isNaN(val)) total += val;
+      });
+      totalGeralEl.textContent = total ? `Total geral: R$ ${total.toFixed(2)}` : '';
+    }
+
+    document.getElementById('addBtn').onclick = () => addLinha();
+
+    document.getElementById('saveBtn').onclick = () => {
+      const nome = prompt('Nome do arquivo:', 'lista_compras').replace(/[\\/]/g, '_');
+      if (!nome) return;
+      const blob = new Blob([localStorage.getItem('listaCompras')], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = nome + '.json';
+      a.click();
+    };
+
+    document.getElementById('loadBtn').onclick = () => {
+      const input = document.createElement('input');
+      input.type = 'file'; input.accept = '.json';
+      input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const dados = JSON.parse(reader.result);
+            if (!Array.isArray(dados)) throw 'Formato inválido';
+            tbody.innerHTML = '';
+            dados.forEach(d => addLinha(d));
+            salvarLocalStorage();
+          } catch {
+            alert('Arquivo JSON inválido.');
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    };
+
+    document.getElementById('clearBtn').onclick = () => {
+      if (confirm('Tem certeza que deseja limpar tudo?')) {
+        tbody.innerHTML = '';
+        addLinha();
+        salvarLocalStorage();
+      }
+    };
+
+    document.getElementById('pdfBtn').onclick = async () => {
+      const nome = prompt('Nome do PDF:', 'lista_compras').replace(/[\\/]/g, '_');
+      if (!nome) return;
+      const dados = [...tbody.querySelectorAll('tr')].map(tr => {
+        const [p, q, v] = tr.querySelectorAll('input');
+        return [p.value, q.value, v.value, tr.querySelector('.total').textContent];
+      });
+
+      const hasUnicode = JSON.stringify(dados).match(/[^\u0000-\u007f]/);
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      try {
+        if (!hasUnicode) {
+          doc.text('Lista de Compras', 14, 15);
+          doc.autoTable({
+            head: [['Produto','Qtd','Valor','Total']],
+            body: dados,
+            startY: 20
+          });
+          doc.text(totalGeralEl.textContent, 14, doc.lastAutoTable.finalY + 10);
+          doc.save(nome + '.pdf');
+        } else {
+          throw 'Unicode';
+        }
+      } catch {
+        const canvas = await html2canvas(document.querySelector('main'));
+        const img = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({ orientation: 'portrait' });
+        pdf.addImage(img, 'PNG', 10, 10, 190, 0);
+        pdf.save(nome + '.pdf');
+      }
+    };
+
+    carregarLocalStorage();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    }
+  </script>
 </body>
 </html>
