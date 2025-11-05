@@ -9,10 +9,11 @@
   <link rel="icon" href="icon-192.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-2">
   <div class="bg-white shadow-lg rounded-xl p-3 w-full max-w-md">
-    <h1 class="text-xl font-bold text-center mb-3">🛒 Lista de Compras</h1>
+    <h1 class="text-xl font-bold text-center mb-3">Lista de Compras</h1>
 
     <div class="overflow-x-auto">
       <table class="w-full text-xs border-collapse">
@@ -48,9 +49,7 @@
 
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js").then(() => {
-        console.log("Service Worker registrado com sucesso!");
-      }).catch(console.error);
+      navigator.serviceWorker.register("service-worker.js").catch(()=>{});
     }
 
     const { jsPDF } = window.jspdf;
@@ -103,8 +102,9 @@
     });
 
     document.addEventListener("click", e => {
-      if (e.target.classList.contains("remover")) {
-        const tr = e.target.closest("tr");
+      const rem = e.target.closest('.remover');
+      if (rem) {
+        const tr = rem.closest("tr");
         const nome = tr.querySelector(".produto").value || "este item";
         if (confirm(`Deseja remover "${nome}"?`)) {
           tr.remove();
@@ -122,6 +122,7 @@
       }
     });
 
+    // SALVAR JSON
     btnExportar.addEventListener("click", () => {
       const dados = [];
       tabela.querySelectorAll("tr").forEach(linha => {
@@ -141,6 +142,7 @@
       mostrarMensagem("💾 Lista salva!");
     });
 
+    // CARREGAR JSON
     inputImportar.addEventListener("change", (e) => {
       const arquivo = e.target.files[0];
       if (!arquivo) return;
@@ -161,27 +163,49 @@
       e.target.value = "";
     });
 
+    // PDF COM TABELA TABULAR
     btnPDF.addEventListener("click", () => {
       const doc = new jsPDF();
-      doc.setFont("helvetica", "bold");
-      doc.text("Lista de Compras", 14, 20);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
+      const rows = [];
+      let totalGeral = 0;
 
-      let y = 30;
-      tabela.querySelectorAll("tr").forEach(linha => {
-        const produto = linha.querySelector(".produto").value || "";
-        const qtd = linha.querySelector(".quantidade").value || "0";
-        const valor = parseFloat(linha.querySelector(".valor").value) || 0;
-        const total = (valor * qtd).toFixed(2);
-        doc.text(`${produto} (${qtd}x R$${valor}) = R$${total}`, 14, y);
-        y += 6;
-        if (y > 270) { doc.addPage(); y = 20; }
+      tabela.querySelectorAll("tr").forEach(tr => {
+        const produto = tr.querySelector(".produto").value || "";
+        const qtd = parseFloat(tr.querySelector(".quantidade").value) || 0;
+        const valor = parseFloat(tr.querySelector(".valor").value) || 0;
+        const total = qtd * valor;
+        totalGeral += total;
+        rows.push([produto, qtd.toString(), `R$ ${valor.toFixed(2)}`, `R$ ${total.toFixed(2)}`]);
       });
+
+      if (rows.length === 0) {
+        alert("A lista está vazia!");
+        return;
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("Lista de Compras", 14, 15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+
+      doc.autoTable({
+        head: [["Produto", "Qtd", "Valor", "Total"]],
+        body: rows,
+        startY: 25,
+        theme: "grid",
+        styles: { fontSize: 10, cellPadding: 2 },
+        headStyles: { fillColor: [37, 99, 235] },
+      });
+
+      const finalY = doc.lastAutoTable.finalY + 10;
+      doc.setFont("helvetica", "bold");
+      doc.text(`Total Geral: R$ ${totalGeral.toFixed(2)}`, 14, finalY);
       doc.save("lista-compras.pdf");
       mostrarMensagem("📄 PDF gerado!");
     });
 
+    // inicia com uma linha vazia
     tabela.appendChild(criarLinha());
     atualizarTotais();
   </script>
