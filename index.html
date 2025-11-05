@@ -20,7 +20,7 @@
           <th class="text-left p-1 w-[50%]">Produto</th>
           <th class="text-left p-1 w-[20%]">Qtd</th>
           <th class="text-left p-1 w-[20%]">Valor</th>
-          <th class="text-left p-1 w-[10%]">🗑️</th>
+          <th class="text-center p-1 w-[10%]"></th>
         </tr>
       </thead>
       <tbody id="lista"></tbody>
@@ -44,8 +44,13 @@
     const lista = document.getElementById("lista");
     const totalGeralEl = document.getElementById("totalGeral");
 
-    // === Funções principais ===
+    // Ícone bonito de lixeira (Lucide style)
+    const iconeLixeira = `
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m2 0v14a2 2 0 01-2 2H8a2 2 0 01-2-2V6z" />
+      </svg>`;
 
+    // === Funções principais ===
     function atualizarTotal() {
       let total = 0;
       lista.querySelectorAll("tr").forEach(linha => {
@@ -64,13 +69,14 @@
         <td><input type="text" class="produto w-full border rounded p-1 text-xs" value="${produto}" placeholder="Produto"></td>
         <td><input type="number" class="qtd w-full border rounded p-1 text-xs" min="0" value="${qtd}"></td>
         <td><input type="number" class="valor w-full border rounded p-1 text-xs" min="0" step="0.01" value="${valor}"></td>
-        <td class="text-center"><button class="remover bg-red-500 text-white rounded px-2 py-1 text-xs">X</button></td>
+        <td class="text-center">
+          <button class="remover bg-red-500 text-white rounded p-1 hover:bg-red-600" title="Remover item">${iconeLixeira}</button>
+        </td>
       `;
       lista.appendChild(tr);
     }
 
     // === Persistência automática ===
-
     function salvarAuto() {
       const dados = [];
       lista.querySelectorAll("tr").forEach(tr => {
@@ -95,7 +101,6 @@
     }
 
     // === Exportações ===
-
     function salvarJSON() {
       const nomeArquivo = prompt("Digite o nome do arquivo para salvar:", "lista_compras");
       if (!nomeArquivo) return;
@@ -153,7 +158,6 @@
     }
 
     // === Eventos ===
-
     document.getElementById("addItem").onclick = () => { criarLinha(); salvarAuto(); };
     document.getElementById("btnSalvar").onclick = salvarJSON;
     document.getElementById("btnCarregar").onclick = carregarJSON;
@@ -167,10 +171,17 @@
       }
     };
 
+    // Confirmação inteligente ao remover item
     lista.addEventListener("click", e => {
-      if (e.target.classList.contains("remover")) {
-        if (confirm("Remover este item?")) {
-          e.target.closest("tr").remove();
+      if (e.target.closest(".remover")) {
+        const linha = e.target.closest("tr");
+        const produto = linha.querySelector(".produto").value.trim();
+        const qtd = linha.querySelector(".qtd").value;
+        const valor = linha.querySelector(".valor").value;
+        const linhaVazia = !produto && !qtd && !valor;
+
+        if (linhaVazia || confirm("Remover este item?")) {
+          linha.remove();
           atualizarTotal();
         }
       }
@@ -178,7 +189,7 @@
 
     lista.addEventListener("input", atualizarTotal);
 
-    // === Inicialização automática ===
+    // Inicialização automática
     carregarAuto();
   </script>
 </body>
