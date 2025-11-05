@@ -4,15 +4,23 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Lista de Compras</title>
+
+  <!-- Manifesto e ícone -->
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2563eb">
   <link rel="icon" href="icon-192.png" type="image/png">
+
+  <!-- Tailwind e jsPDF -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
+
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-2">
   <div class="bg-white shadow-lg rounded-xl p-3 w-full max-w-md">
-    <h1 class="text-xl font-bold text-center mb-3">Lista de Compras</h1>
+    <h1 class="text-xl font-bold text-center mb-3 flex items-center justify-center gap-2">
+      🛒 Lista de Compras
+    </h1>
 
     <div class="overflow-x-auto">
       <table class="w-full text-xs border-collapse">
@@ -47,8 +55,12 @@
   </div>
 
   <script>
-    const { jsPDF } = window.jspdf;
+    // Ativa o PWA
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+    }
 
+    const { jsPDF } = window.jspdf;
     const tabela = document.getElementById('lista-compras');
     const totalGeralEl = document.getElementById('totalGeral');
     const btnAdd = document.getElementById('btnAdd');
@@ -117,7 +129,7 @@
       }
     });
 
-    // SALVAR JSON
+    // Salvar JSON
     btnExportar.addEventListener("click", () => {
       const dados = [];
       tabela.querySelectorAll("tr").forEach(linha => {
@@ -137,7 +149,7 @@
       mostrarMensagem("💾 Lista salva!");
     });
 
-    // CARREGAR JSON
+    // Carregar JSON
     inputImportar.addEventListener("change", (e) => {
       const arquivo = e.target.files[0];
       if (!arquivo) return;
@@ -158,7 +170,7 @@
       e.target.value = "";
     });
 
-    // PDF com tabela
+    // PDF com tabela tabular
     btnPDF.addEventListener("click", () => {
       const doc = new jsPDF();
       const rows = [];
