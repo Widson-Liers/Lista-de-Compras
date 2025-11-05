@@ -5,27 +5,109 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lista de Compras 🛒</title>
 
-<!-- Manifesto e ícone -->
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" type="image/png">
 <meta name="theme-color" content="#2563eb">
 
 <style>
-  body{font-family:Inter,Arial,sans-serif;background:#f3f4f6;margin:0;padding:20px}
-  .card{max-width:900px;margin:auto;background:#fff;padding:16px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
-  h1{margin:0;font-size:22px;color:#111}
-  table{width:100%;border-collapse:collapse;margin-top:12px}
-  th,td{border-bottom:1px solid #e5e7eb;padding:8px;font-size:14px}
-  th{background:#f9fafb;text-align:left}
-  input[type=text],input[type=number]{width:100%;border:1px solid #d1d5db;border-radius:8px;padding:6px;font-size:14px}
-  input.readonly{background:#f8fafc}
-  .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
-  button{border:none;padding:10px 14px;border-radius:8px;color:#fff;background:#2563eb;cursor:pointer}
-  button:hover{opacity:0.9}
-  .btn-danger{background:#dc2626}
-  .icon-btn{background:none;border:none;cursor:pointer}
-  .icon-btn svg{width:22px;height:22px;fill:#dc2626}
-  .total-line{text-align:right;font-weight:bold;margin-top:10px}
+  body {
+    font-family: Inter, Arial, sans-serif;
+    background: #f3f4f6;
+    margin: 0;
+    padding: 20px;
+  }
+
+  .card {
+    max-width: 900px;
+    margin: auto;
+    background: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    color: #111;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+  }
+
+  th, td {
+    padding: 3px 10px; /* 🔹 Mantém espaçamento entre colunas */
+    font-size: 14px;
+    line-height: 1; /* 🔹 Diminui altura real das linhas */
+  }
+
+  th {
+    background: #f9fafb;
+    text-align: left;
+  }
+
+  tr + tr td {
+    border-top: none; /* 🔹 Remove as linhas divisórias */
+  }
+
+  input[type=text], input[type=number] {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 2px 5px; /* 🔹 Campos mais baixos */
+    font-size: 14px;
+  }
+
+  input.readonly {
+    background: #f8fafc;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  button {
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: #fff;
+    background: #2563eb;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  button:hover {
+    opacity: 0.9;
+  }
+
+  .btn-danger {
+    background: #dc2626;
+  }
+
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .icon-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #dc2626;
+  }
+
+  .total-line {
+    text-align: right;
+    font-weight: bold;
+    margin-top: 6px;
+  }
 </style>
 </head>
 <body>
@@ -44,17 +126,17 @@
     <tbody id="lista"></tbody>
   </table>
   <div class="total-line">Total geral: R$ <span id="totalGeral">0.00</span></div>
+
   <div class="actions">
     <button id="add">➕ Adicionar</button>
     <button id="save">💾 Salvar</button>
     <button id="load">📂 Carregar</button>
-    <button id="pdf">🧾 Gerar PDF</button>
+    <button id="pdf">🧾 PDF</button>
     <button id="clear" class="btn-danger">🧹 Limpar</button>
     <input type="file" id="fileInput" accept=".json" style="display:none">
   </div>
 </div>
 
-<!-- libs jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
@@ -64,15 +146,15 @@ const totalGeralEl = document.getElementById('totalGeral');
 const STORAGE_KEY = 'lista_compras_v2';
 let itens = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 
-function salvarLocal(){
+function salvarLocal() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(itens));
 }
 
-function atualizarTotais(){
+function atualizarTotais() {
   let totalGeral = 0;
-  itens.forEach((item,i)=>{
+  itens.forEach((item, i) => {
     const linha = lista.children[i];
-    const total = (Number(item.qtd)||0)*(Number(item.valor)||0);
+    const total = (Number(item.qtd) || 0) * (Number(item.valor) || 0);
     linha.querySelector('.total').value = total ? total.toFixed(2) : '';
     totalGeral += total;
   });
@@ -80,102 +162,99 @@ function atualizarTotais(){
   salvarLocal();
 }
 
-function criarLinha(item={}, index){
+function criarLinha(item = {}, index) {
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td><input type="text" value="${item.produto||''}" placeholder="Produto" class="produto"></td>
-    <td><input type="number" value="${item.qtd||''}" min="0" class="qtd"></td>
-    <td><input type="number" value="${item.valor||''}" min="0" step="0.01" class="valor"></td>
+    <td><input type="text" value="${item.produto || ''}" placeholder="Produto" class="produto"></td>
+    <td><input type="number" value="${item.qtd || ''}" min="0" class="qtd"></td>
+    <td><input type="number" value="${item.valor || ''}" min="0" step="0.01" class="valor"></td>
     <td><input type="number" readonly class="total readonly"></td>
     <td><button class="icon-btn" title="Excluir"><svg viewBox="0 0 24 24"><path d="M9 3V4H4V6H5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V6H20V4H15V3H9ZM7 6H17V19H7V6ZM9 8V17H11V8H9ZM13 8V17H15V8H13Z"/></svg></button></td>
   `;
 
-  tr.querySelector('.produto').addEventListener('input', e=>{
+  tr.querySelector('.produto').addEventListener('input', e => {
     itens[index].produto = e.target.value;
     atualizarTotais();
   });
-  tr.querySelector('.qtd').addEventListener('input', e=>{
+  tr.querySelector('.qtd').addEventListener('input', e => {
     itens[index].qtd = e.target.value;
     atualizarTotais();
   });
-  tr.querySelector('.valor').addEventListener('input', e=>{
+  tr.querySelector('.valor').addEventListener('input', e => {
     itens[index].valor = e.target.value;
     atualizarTotais();
   });
-  tr.querySelector('.icon-btn').addEventListener('click', ()=>{
+  tr.querySelector('.icon-btn').addEventListener('click', () => {
     const temDado = (itens[index].produto || itens[index].qtd || itens[index].valor);
-    if(temDado && !confirm("Deseja realmente excluir esta linha?")) return;
-    itens.splice(index,1);
+    if (temDado && !confirm("Deseja realmente excluir esta linha?")) return;
+    itens.splice(index, 1);
     render();
   });
 
   lista.appendChild(tr);
 }
 
-function render(){
+function render() {
   lista.innerHTML = '';
-  itens.forEach((item,i)=>criarLinha(item,i));
+  itens.forEach((item, i) => criarLinha(item, i));
   atualizarTotais();
 }
 
-document.getElementById('add').onclick = ()=>{
-  itens.push({produto:'',qtd:'',valor:''});
+document.getElementById('add').onclick = () => {
+  itens.push({ produto: '', qtd: '', valor: '' });
   render();
 };
-document.getElementById('clear').onclick = ()=>{
-  if(confirm("Deseja apagar toda a lista?")){
+document.getElementById('clear').onclick = () => {
+  if (confirm("Deseja apagar toda a lista?")) {
     itens = [];
     render();
   }
 };
-document.getElementById('save').onclick = ()=>{
-  if(!itens.length) return alert("Nada para salvar!");
+document.getElementById('save').onclick = () => {
+  if (!itens.length) return alert("Nada para salvar!");
   const nome = prompt("Nome do arquivo:", "lista-compras") || "lista-compras";
-  const blob = new Blob([JSON.stringify(itens,null,2)],{type:"application/json"});
+  const blob = new Blob([JSON.stringify(itens, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = nome + ".json";
   a.click();
 };
-document.getElementById('load').onclick = ()=>document.getElementById('fileInput').click();
-document.getElementById('fileInput').onchange = e=>{
+document.getElementById('load').onclick = () => document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange = e => {
   const file = e.target.files[0];
-  if(!file) return;
+  if (!file) return;
   const r = new FileReader();
-  r.onload = ev=>{
-    try{
+  r.onload = ev => {
+    try {
       itens = JSON.parse(ev.target.result);
       render();
-    }catch(err){alert("Arquivo inválido");}
+    } catch (err) { alert("Arquivo inválido"); }
   };
   r.readAsText(file);
-  e.target.value='';
+  e.target.value = '';
 };
-document.getElementById('pdf').onclick = async ()=>{
-  if(!itens.length) return alert("Nada para gerar PDF!");
+document.getElementById('pdf').onclick = async () => {
+  if (!itens.length) return alert("Nada para gerar PDF!");
   const nome = prompt("Nome do PDF:", "lista-compras") || "lista-compras";
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({unit:'pt',format:'a4'});
-  doc.text("Lista de Compras",40,40);
-  const rows = itens.map(i=>[i.produto,i.qtd||'',i.valor||'',
-    i.qtd && i.valor ? (i.qtd*i.valor).toFixed(2) : ''
-  ]);
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  doc.text("Lista de Compras", 40, 40);
+  const rows = itens.map(i => [i.produto, i.qtd || '', i.valor || '', i.qtd && i.valor ? (i.qtd * i.valor).toFixed(2) : '']);
   doc.autoTable({
-    head:[["Produto","Qtd","Valor (R$)","Total (R$)"]],
-    body:rows,
-    startY:60,
-    styles:{fontSize:10},
-    headStyles:{fillColor:[37,99,235],textColor:255}
+    head: [["Produto", "Qtd", "Valor (R$)", "Total (R$)"]],
+    body: rows,
+    startY: 60,
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [37, 99, 235], textColor: 255 }
   });
-  const total = itens.reduce((s,i)=>s+(i.qtd&&i.valor?(i.qtd*i.valor):0),0);
-  doc.text(`Total Geral: R$ ${total.toFixed(2)}`,40,doc.lastAutoTable.finalY+20);
-  doc.save(nome+".pdf");
+  const total = itens.reduce((s, i) => s + (i.qtd && i.valor ? (i.qtd * i.valor) : 0), 0);
+  doc.text(`Total Geral: R$ ${total.toFixed(2)}`, 40, doc.lastAutoTable.finalY + 20);
+  doc.save(nome + ".pdf");
 };
 
-if(itens.length===0) itens=[{produto:'',qtd:'',valor:''}];
+if (itens.length === 0) itens = [{ produto: '', qtd: '', valor: '' }];
 render();
 
-// Registro do Service Worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js');
 }
