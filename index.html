@@ -1,219 +1,161 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Lista de Compras</title>
-
-  <!-- Manifesto e ícone -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2563eb">
-  <link rel="icon" href="icon-192.png" type="image/png">
-
-  <!-- Tailwind e jsPDF -->
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081820.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen p-2">
+  <div class="bg-white shadow-lg rounded-2xl p-4 w-full max-w-sm">
+    <h1 class="text-xl font-bold text-center mb-2">🛒 Lista de Compras</h1>
 
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-2">
-  <div class="bg-white shadow-lg rounded-xl p-3 w-full max-w-md">
-    <h1 class="text-xl font-bold text-center mb-3 flex items-center justify-center gap-2">
-      🛒 Lista de Compras
-    </h1>
+    <!-- Tabela -->
+    <table class="w-full text-xs border-collapse">
+      <thead>
+        <tr class="border-b bg-gray-50">
+          <th class="text-left p-1 w-[50%]">Produto</th>
+          <th class="text-left p-1 w-[20%]">Qtd</th>
+          <th class="text-left p-1 w-[20%]">Valor</th>
+          <th class="text-left p-1 w-[10%]">🗑️</th>
+        </tr>
+      </thead>
+      <tbody id="lista"></tbody>
+    </table>
 
-    <div class="overflow-x-auto">
-      <table class="w-full text-xs border-collapse">
-        <thead>
-          <tr class="border-b text-gray-700">
-            <th class="text-left p-1 w-3/5">Produto</th>
-            <th class="text-left p-1 w-1/6">Qtd</th>
-            <th class="text-left p-1 w-1/6">Valor</th>
-            <th class="text-left p-1 w-1/6">Total</th>
-            <th class="p-1 w-10"></th>
-          </tr>
-        </thead>
-        <tbody id="lista-compras"></tbody>
-      </table>
-    </div>
-
-    <div class="flex justify-end items-center mt-2">
+    <div class="flex justify-between items-center mt-3">
       <p class="text-sm font-semibold">Total: <span id="totalGeral" class="text-green-600">R$ 0,00</span></p>
     </div>
 
-    <!-- Botões -->
-    <div class="grid grid-cols-5 gap-1 mt-3">
-      <button id="btnAdd" class="bg-blue-500 text-white py-1 text-xs rounded hover:bg-blue-600">+Item</button>
-      <button id="btnExportar" class="bg-green-500 text-white py-1 text-xs rounded hover:bg-green-600">Salvar</button>
-      <label for="importarArquivo" class="bg-yellow-500 text-white py-1 text-xs rounded text-center hover:bg-yellow-600 cursor-pointer">Carregar</label>
-      <input id="importarArquivo" type="file" accept=".json" class="hidden" />
-      <button id="btnPDF" class="bg-purple-500 text-white py-1 text-xs rounded hover:bg-purple-600">PDF</button>
-      <button id="btnLimpar" class="bg-gray-400 text-white py-1 text-xs rounded hover:bg-gray-500">Limpar</button>
+    <!-- Botões pequenos e lado a lado -->
+    <div class="grid grid-cols-5 gap-1 mt-3 text-xs">
+      <button id="addItem" class="bg-blue-500 text-white rounded py-1 hover:bg-blue-600">+Item</button>
+      <button id="btnSalvar" class="bg-green-500 text-white rounded py-1 hover:bg-green-600">Salvar</button>
+      <button id="btnCarregar" class="bg-yellow-500 text-white rounded py-1 hover:bg-yellow-600">Carregar</button>
+      <button id="btnPDF" class="bg-purple-500 text-white rounded py-1 hover:bg-purple-600">PDF</button>
+      <button id="btnLimpar" class="bg-gray-400 text-white rounded py-1 hover:bg-gray-500">Limpar</button>
     </div>
-
-    <p id="mensagem" class="text-xs text-center mt-2 text-gray-600"></p>
   </div>
 
   <script>
-    // Ativa o PWA
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js").catch(()=>{});
-    }
+    const lista = document.getElementById("lista");
+    const totalGeralEl = document.getElementById("totalGeral");
 
-    const { jsPDF } = window.jspdf;
-    const tabela = document.getElementById('lista-compras');
-    const totalGeralEl = document.getElementById('totalGeral');
-    const btnAdd = document.getElementById('btnAdd');
-    const btnExportar = document.getElementById('btnExportar');
-    const btnPDF = document.getElementById('btnPDF');
-    const btnLimpar = document.getElementById('btnLimpar');
-    const inputImportar = document.getElementById('importarArquivo');
-    const msg = document.getElementById('mensagem');
-
-    function criarLinha(produto = "", qtd = "", valor = "") {
-      const tr = document.createElement("tr");
-      tr.classList.add("border-b");
-      tr.innerHTML = `
-        <td class="p-1"><input type="text" class="produto w-full border rounded p-1 text-xs" value="${produto}" placeholder="Produto"></td>
-        <td class="p-1"><input type="number" class="quantidade w-full border rounded p-1 text-xs text-center" min="0" value="${qtd}"></td>
-        <td class="p-1"><input type="number" class="valor w-full border rounded p-1 text-xs text-center" min="0" step="0.01" value="${valor}"></td>
-        <td class="p-1 text-right total-item text-gray-700 text-xs">0,00</td>
-        <td class="p-1 text-center">
-          <button class="remover bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">🗑️</button>
-        </td>
-      `;
-      return tr;
-    }
-
-    function atualizarTotais() {
+    function atualizarTotal() {
       let total = 0;
-      tabela.querySelectorAll("tr").forEach(linha => {
-        const qtd = parseFloat(linha.querySelector(".quantidade").value) || 0;
+      lista.querySelectorAll("tr").forEach(linha => {
+        const qtd = parseFloat(linha.querySelector(".qtd").value) || 0;
         const valor = parseFloat(linha.querySelector(".valor").value) || 0;
-        const totalItem = qtd * valor;
-        linha.querySelector(".total-item").textContent = totalItem.toFixed(2).replace(".", ",");
-        total += totalItem;
+        total += qtd * valor;
       });
       totalGeralEl.textContent = `R$ ${total.toFixed(2).replace(".", ",")}`;
     }
 
-    function mostrarMensagem(texto) {
-      msg.textContent = texto;
-      setTimeout(() => msg.textContent = "", 3000);
+    function criarLinha(produto = "", qtd = "", valor = "") {
+      const tr = document.createElement("tr");
+      tr.className = "border-b";
+      tr.innerHTML = `
+        <td><input type="text" class="produto w-full border rounded p-1 text-xs" value="${produto}" placeholder="Produto"></td>
+        <td><input type="number" class="qtd w-full border rounded p-1 text-xs" min="0" value="${qtd}" placeholder=""></td>
+        <td><input type="number" class="valor w-full border rounded p-1 text-xs" min="0" step="0.01" value="${valor}" placeholder=""></td>
+        <td class="text-center"><button class="remover bg-red-500 text-white rounded px-2 py-1 text-xs">X</button></td>
+      `;
+      lista.appendChild(tr);
     }
 
-    btnAdd.addEventListener("click", () => tabela.appendChild(criarLinha()));
-
-    document.addEventListener("input", e => {
-      if (e.target.classList.contains("quantidade") || e.target.classList.contains("valor")) atualizarTotais();
-    });
-
-    document.addEventListener("click", e => {
-      const rem = e.target.closest('.remover');
-      if (rem) {
-        const tr = rem.closest("tr");
-        const nome = tr.querySelector(".produto").value || "este item";
-        if (confirm(`Deseja remover "${nome}"?`)) {
-          tr.remove();
-          atualizarTotais();
-        }
-      }
-    });
-
-    btnLimpar.addEventListener("click", () => {
-      if (confirm("Tem certeza que deseja limpar toda a lista?")) {
-        tabela.innerHTML = "";
-        tabela.appendChild(criarLinha());
-        atualizarTotais();
-        mostrarMensagem("🧼 Lista limpa");
-      }
-    });
-
-    // Salvar JSON
-    btnExportar.addEventListener("click", () => {
+    function salvarJSON() {
+      const nomeArquivo = prompt("Digite o nome do arquivo para salvar:", "lista_compras");
+      if (!nomeArquivo) return;
       const dados = [];
-      tabela.querySelectorAll("tr").forEach(linha => {
-        const produto = linha.querySelector(".produto").value.trim();
-        const qtd = linha.querySelector(".quantidade").value;
-        const valor = linha.querySelector(".valor").value;
+      lista.querySelectorAll("tr").forEach(tr => {
+        const produto = tr.querySelector(".produto").value.trim();
+        const qtd = tr.querySelector(".qtd").value;
+        const valor = tr.querySelector(".valor").value;
         if (produto) dados.push({ produto, qtd, valor });
       });
-      if (dados.length === 0) return alert("A lista está vazia!");
       const blob = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = "lista-compras.json";
+      a.href = URL.createObjectURL(blob);
+      a.download = `${nomeArquivo}.json`;
       a.click();
-      URL.revokeObjectURL(url);
-      mostrarMensagem("💾 Lista salva!");
-    });
+    }
 
-    // Carregar JSON
-    inputImportar.addEventListener("change", (e) => {
-      const arquivo = e.target.files[0];
-      if (!arquivo) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const dados = JSON.parse(ev.target.result);
-          if (!Array.isArray(dados)) throw new Error();
-          tabela.innerHTML = "";
-          dados.forEach(item => tabela.appendChild(criarLinha(item.produto, item.qtd, item.valor)));
-          atualizarTotais();
-          mostrarMensagem("📥 Lista carregada!");
-        } catch {
-          alert("Arquivo inválido!");
-        }
+    function carregarJSON() {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".json";
+      input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = event => {
+          const dados = JSON.parse(event.target.result);
+          lista.innerHTML = "";
+          dados.forEach(item => criarLinha(item.produto, item.qtd, item.valor));
+          atualizarTotal();
+        };
+        reader.readAsText(file);
       };
-      reader.readAsText(arquivo);
-      e.target.value = "";
-    });
+      input.click();
+    }
 
-    // PDF com tabela tabular
-    btnPDF.addEventListener("click", () => {
+    function exportarPDF() {
+      const nomeArquivo = prompt("Digite o nome do arquivo PDF:", "lista_compras");
+      if (!nomeArquivo) return;
+      const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-      const rows = [];
-      let totalGeral = 0;
 
-      tabela.querySelectorAll("tr").forEach(tr => {
-        const produto = tr.querySelector(".produto").value || "";
-        const qtd = parseFloat(tr.querySelector(".quantidade").value) || 0;
-        const valor = parseFloat(tr.querySelector(".valor").value) || 0;
-        const total = qtd * valor;
-        totalGeral += total;
-        rows.push([produto, qtd ? qtd.toString() : "", valor ? `R$ ${valor.toFixed(2)}` : "", `R$ ${total.toFixed(2)}`]);
+      const linhas = [];
+      lista.querySelectorAll("tr").forEach(tr => {
+        const produto = tr.querySelector(".produto").value.trim();
+        const qtd = tr.querySelector(".qtd").value;
+        const valor = tr.querySelector(".valor").value;
+        if (produto) {
+          linhas.push([produto, qtd, valor]);
+        }
       });
 
-      if (rows.length === 0) {
-        alert("A lista está vazia!");
-        return;
-      }
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.text("Lista de Compras", 14, 15);
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-
+      doc.text("Lista de Compras", 14, 10);
       doc.autoTable({
-        head: [["Produto", "Qtd", "Valor", "Total"]],
-        body: rows,
-        startY: 25,
-        theme: "grid",
-        styles: { fontSize: 10, cellPadding: 2 },
-        headStyles: { fillColor: [37, 99, 235] },
+        head: [["Produto", "Quantidade", "Valor"]],
+        body: linhas,
+        startY: 15,
+        styles: { fontSize: 10 },
+        theme: 'grid'
       });
 
-      const finalY = doc.lastAutoTable.finalY + 10;
-      doc.setFont("helvetica", "bold");
-      doc.text(`Total Geral: R$ ${totalGeral.toFixed(2)}`, 14, finalY);
-      doc.save("lista-compras.pdf");
-      mostrarMensagem("📄 PDF gerado!");
+      doc.text(`Total: ${totalGeralEl.textContent}`, 14, doc.lastAutoTable.finalY + 10);
+      doc.save(`${nomeArquivo}.pdf`);
+    }
+
+    document.getElementById("addItem").onclick = () => criarLinha();
+    document.getElementById("btnSalvar").onclick = salvarJSON;
+    document.getElementById("btnCarregar").onclick = carregarJSON;
+    document.getElementById("btnPDF").onclick = exportarPDF;
+    document.getElementById("btnLimpar").onclick = () => {
+      if (confirm("Deseja limpar toda a lista?")) {
+        lista.innerHTML = "";
+        criarLinha();
+        atualizarTotal();
+      }
+    };
+
+    lista.addEventListener("click", e => {
+      if (e.target.classList.contains("remover")) {
+        if (confirm("Remover este item?")) {
+          e.target.closest("tr").remove();
+          atualizarTotal();
+        }
+      }
     });
 
-    tabela.appendChild(criarLinha());
-    atualizarTotais();
+    lista.addEventListener("input", atualizarTotal);
+
+    // Inicial
+    criarLinha();
   </script>
 </body>
 </html>
