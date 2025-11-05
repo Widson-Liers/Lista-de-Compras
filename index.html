@@ -4,14 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Lista de Compras</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="icon" href="icon-192.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-2">
   <div class="bg-white shadow-lg rounded-xl p-3 w-full max-w-md">
-    <h1 class="text-xl font-bold text-center mb-3">Lista de Compras</h1>
+    <h1 class="text-xl font-bold text-center mb-3">🛒 Lista de Compras</h1>
 
-    <!-- TABELA -->
     <div class="overflow-x-auto">
       <table class="w-full text-xs border-collapse">
         <thead>
@@ -27,12 +29,11 @@
       </table>
     </div>
 
-    <!-- TOTAL -->
     <div class="flex justify-end items-center mt-2">
       <p class="text-sm font-semibold">Total: <span id="totalGeral" class="text-green-600">R$ 0,00</span></p>
     </div>
 
-    <!-- LINHA DE BOTÕES -->
+    <!-- Botões -->
     <div class="grid grid-cols-5 gap-1 mt-3">
       <button id="btnAdd" class="bg-blue-500 text-white py-1 text-xs rounded hover:bg-blue-600">+ Item</button>
       <button id="btnExportar" class="bg-green-500 text-white py-1 text-xs rounded hover:bg-green-600">Salvar</button>
@@ -46,6 +47,12 @@
   </div>
 
   <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js").then(() => {
+        console.log("Service Worker registrado com sucesso!");
+      }).catch(console.error);
+    }
+
     const { jsPDF } = window.jspdf;
 
     const tabela = document.getElementById('lista-compras');
@@ -89,14 +96,10 @@
       setTimeout(() => msg.textContent = "", 3000);
     }
 
-    btnAdd.addEventListener("click", () => {
-      tabela.appendChild(criarLinha());
-    });
+    btnAdd.addEventListener("click", () => tabela.appendChild(criarLinha()));
 
     document.addEventListener("input", e => {
-      if (e.target.classList.contains("quantidade") || e.target.classList.contains("valor")) {
-        atualizarTotais();
-      }
+      if (e.target.classList.contains("quantidade") || e.target.classList.contains("valor")) atualizarTotais();
     });
 
     document.addEventListener("click", e => {
@@ -119,7 +122,6 @@
       }
     });
 
-    // === SALVAR JSON ===
     btnExportar.addEventListener("click", () => {
       const dados = [];
       tabela.querySelectorAll("tr").forEach(linha => {
@@ -128,9 +130,7 @@
         const valor = linha.querySelector(".valor").value || "0";
         if (produto) dados.push({ produto, qtd, valor });
       });
-
       if (dados.length === 0) return alert("A lista está vazia!");
-
       const blob = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -141,7 +141,6 @@
       mostrarMensagem("💾 Lista salva!");
     });
 
-    // === CARREGAR JSON ===
     inputImportar.addEventListener("change", (e) => {
       const arquivo = e.target.files[0];
       if (!arquivo) return;
@@ -151,9 +150,7 @@
           const dados = JSON.parse(ev.target.result);
           if (!Array.isArray(dados)) throw new Error();
           tabela.innerHTML = "";
-          dados.forEach(item => {
-            tabela.appendChild(criarLinha(item.produto, item.qtd, item.valor));
-          });
+          dados.forEach(item => tabela.appendChild(criarLinha(item.produto, item.qtd, item.valor)));
           atualizarTotais();
           mostrarMensagem("📥 Lista carregada!");
         } catch {
@@ -164,47 +161,23 @@
       e.target.value = "";
     });
 
-    // === GERAR PDF ===
     btnPDF.addEventListener("click", () => {
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const doc = new jsPDF();
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
       doc.text("Lista de Compras", 14, 20);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
 
-      let y = 28;
-      doc.text("Produto", 14, y);
-      doc.text("Qtd", 90, y);
-      doc.text("Valor (R$)", 120, y);
-      doc.text("Total (R$)", 160, y);
-      y += 5;
-      doc.line(14, y, 190, y);
-      y += 5;
-
-      let totalGeral = 0;
+      let y = 30;
       tabela.querySelectorAll("tr").forEach(linha => {
         const produto = linha.querySelector(".produto").value || "";
         const qtd = linha.querySelector(".quantidade").value || "0";
         const valor = parseFloat(linha.querySelector(".valor").value) || 0;
-        const total = valor * parseFloat(qtd || 0);
-        totalGeral += total;
-
-        doc.text(produto.substring(0, 30), 14, y);
-        doc.text(String(qtd), 95, y);
-        doc.text(valor.toFixed(2), 125, y);
-        doc.text(total.toFixed(2), 165, y);
+        const total = (valor * qtd).toFixed(2);
+        doc.text(`${produto} (${qtd}x R$${valor}) = R$${total}`, 14, y);
         y += 6;
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
+        if (y > 270) { doc.addPage(); y = 20; }
       });
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      y += 8;
-      doc.text(`Total Geral: R$ ${totalGeral.toFixed(2)}`, 14, y);
       doc.save("lista-compras.pdf");
       mostrarMensagem("📄 PDF gerado!");
     });
