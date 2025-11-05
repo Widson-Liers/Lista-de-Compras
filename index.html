@@ -1,196 +1,184 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Lista de Compras</title>
-  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081820.png" type="image/png">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lista de Compras 🛒</title>
+
+<!-- Manifesto e ícone -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<meta name="theme-color" content="#2563eb">
+
+<style>
+  body{font-family:Inter,Arial,sans-serif;background:#f3f4f6;margin:0;padding:20px}
+  .card{max-width:900px;margin:auto;background:#fff;padding:16px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  h1{margin:0;font-size:22px;color:#111}
+  table{width:100%;border-collapse:collapse;margin-top:12px}
+  th,td{border-bottom:1px solid #e5e7eb;padding:8px;font-size:14px}
+  th{background:#f9fafb;text-align:left}
+  input[type=text],input[type=number]{width:100%;border:1px solid #d1d5db;border-radius:8px;padding:6px;font-size:14px}
+  input.readonly{background:#f8fafc}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
+  button{border:none;padding:10px 14px;border-radius:8px;color:#fff;background:#2563eb;cursor:pointer}
+  button:hover{opacity:0.9}
+  .btn-danger{background:#dc2626}
+  .icon-btn{background:none;border:none;cursor:pointer}
+  .icon-btn svg{width:22px;height:22px;fill:#dc2626}
+  .total-line{text-align:right;font-weight:bold;margin-top:10px}
+</style>
 </head>
-<body class="bg-gray-100 flex justify-center items-center min-h-screen p-2">
-  <div class="bg-white shadow-lg rounded-2xl p-4 w-full max-w-sm">
-    <h1 class="text-xl font-bold text-center mb-2">🛒 Lista de Compras</h1>
-
-    <!-- Tabela -->
-    <table class="w-full text-xs border-collapse">
-      <thead>
-        <tr class="border-b bg-gray-50">
-          <th class="text-left p-1 w-[50%]">Produto</th>
-          <th class="text-left p-1 w-[20%]">Qtd</th>
-          <th class="text-left p-1 w-[20%]">Valor</th>
-          <th class="text-center p-1 w-[10%]"></th>
-        </tr>
-      </thead>
-      <tbody id="lista"></tbody>
-    </table>
-
-    <div class="flex justify-between items-center mt-3">
-      <p class="text-sm font-semibold">Total: <span id="totalGeral" class="text-green-600">R$ 0,00</span></p>
-    </div>
-
-    <!-- Botões -->
-    <div class="grid grid-cols-5 gap-1 mt-3 text-xs">
-      <button id="addItem" class="bg-blue-500 text-white rounded py-1 hover:bg-blue-600">+Item</button>
-      <button id="btnSalvar" class="bg-green-500 text-white rounded py-1 hover:bg-green-600">Salvar</button>
-      <button id="btnCarregar" class="bg-yellow-500 text-white rounded py-1 hover:bg-yellow-600">Carregar</button>
-      <button id="btnPDF" class="bg-purple-500 text-white rounded py-1 hover:bg-purple-600">PDF</button>
-      <button id="btnLimpar" class="bg-gray-400 text-white rounded py-1 hover:bg-gray-500">Limpar</button>
-    </div>
+<body>
+<div class="card">
+  <h1>🛒 Lista de Compras</h1>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:50%">Produto</th>
+        <th style="width:15%">Qtd</th>
+        <th style="width:15%">Valor</th>
+        <th style="width:15%">Total</th>
+        <th style="width:5%"></th>
+      </tr>
+    </thead>
+    <tbody id="lista"></tbody>
+  </table>
+  <div class="total-line">Total geral: R$ <span id="totalGeral">0.00</span></div>
+  <div class="actions">
+    <button id="add">➕ Adicionar</button>
+    <button id="save">💾 Salvar</button>
+    <button id="load">📂 Carregar</button>
+    <button id="pdf">🧾 Gerar PDF</button>
+    <button id="clear" class="btn-danger">🧹 Limpar</button>
+    <input type="file" id="fileInput" accept=".json" style="display:none">
   </div>
+</div>
 
-  <script>
-    const lista = document.getElementById("lista");
-    const totalGeralEl = document.getElementById("totalGeral");
+<!-- libs jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
-    // Ícone bonito de lixeira (Lucide style)
-    const iconeLixeira = `
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m2 0v14a2 2 0 01-2 2H8a2 2 0 01-2-2V6z" />
-      </svg>`;
+<script>
+const lista = document.getElementById('lista');
+const totalGeralEl = document.getElementById('totalGeral');
+const STORAGE_KEY = 'lista_compras_v2';
+let itens = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 
-    // === Funções principais ===
-    function atualizarTotal() {
-      let total = 0;
-      lista.querySelectorAll("tr").forEach(linha => {
-        const qtd = parseFloat(linha.querySelector(".qtd").value) || 0;
-        const valor = parseFloat(linha.querySelector(".valor").value) || 0;
-        total += qtd * valor;
-      });
-      totalGeralEl.textContent = `R$ ${total.toFixed(2).replace(".", ",")}`;
-      salvarAuto();
-    }
+function salvarLocal(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(itens));
+}
 
-    function criarLinha(produto = "", qtd = "", valor = "") {
-      const tr = document.createElement("tr");
-      tr.className = "border-b";
-      tr.innerHTML = `
-        <td><input type="text" class="produto w-full border rounded p-1 text-xs" value="${produto}" placeholder="Produto"></td>
-        <td><input type="number" class="qtd w-full border rounded p-1 text-xs" min="0" value="${qtd}"></td>
-        <td><input type="number" class="valor w-full border rounded p-1 text-xs" min="0" step="0.01" value="${valor}"></td>
-        <td class="text-center">
-          <button class="remover bg-red-500 text-white rounded p-1 hover:bg-red-600" title="Remover item">${iconeLixeira}</button>
-        </td>
-      `;
-      lista.appendChild(tr);
-    }
+function atualizarTotais(){
+  let totalGeral = 0;
+  itens.forEach((item,i)=>{
+    const linha = lista.children[i];
+    const total = (Number(item.qtd)||0)*(Number(item.valor)||0);
+    linha.querySelector('.total').value = total ? total.toFixed(2) : '';
+    totalGeral += total;
+  });
+  totalGeralEl.textContent = totalGeral.toFixed(2);
+  salvarLocal();
+}
 
-    // === Persistência automática ===
-    function salvarAuto() {
-      const dados = [];
-      lista.querySelectorAll("tr").forEach(tr => {
-        const produto = tr.querySelector(".produto").value.trim();
-        const qtd = tr.querySelector(".qtd").value;
-        const valor = tr.querySelector(".valor").value;
-        if (produto || qtd || valor) dados.push({ produto, qtd, valor });
-      });
-      localStorage.setItem("listaComprasAuto", JSON.stringify(dados));
-    }
+function criarLinha(item={}, index){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" value="${item.produto||''}" placeholder="Produto" class="produto"></td>
+    <td><input type="number" value="${item.qtd||''}" min="0" class="qtd"></td>
+    <td><input type="number" value="${item.valor||''}" min="0" step="0.01" class="valor"></td>
+    <td><input type="number" readonly class="total readonly"></td>
+    <td><button class="icon-btn" title="Excluir"><svg viewBox="0 0 24 24"><path d="M9 3V4H4V6H5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V6H20V4H15V3H9ZM7 6H17V19H7V6ZM9 8V17H11V8H9ZM13 8V17H15V8H13Z"/></svg></button></td>
+  `;
 
-    function carregarAuto() {
-      const dados = localStorage.getItem("listaComprasAuto");
-      if (dados) {
-        const itens = JSON.parse(dados);
-        lista.innerHTML = "";
-        itens.forEach(item => criarLinha(item.produto, item.qtd, item.valor));
-      } else {
-        criarLinha();
-      }
-      atualizarTotal();
-    }
+  tr.querySelector('.produto').addEventListener('input', e=>{
+    itens[index].produto = e.target.value;
+    atualizarTotais();
+  });
+  tr.querySelector('.qtd').addEventListener('input', e=>{
+    itens[index].qtd = e.target.value;
+    atualizarTotais();
+  });
+  tr.querySelector('.valor').addEventListener('input', e=>{
+    itens[index].valor = e.target.value;
+    atualizarTotais();
+  });
+  tr.querySelector('.icon-btn').addEventListener('click', ()=>{
+    const temDado = (itens[index].produto || itens[index].qtd || itens[index].valor);
+    if(temDado && !confirm("Deseja realmente excluir esta linha?")) return;
+    itens.splice(index,1);
+    render();
+  });
 
-    // === Exportações ===
-    function salvarJSON() {
-      const nomeArquivo = prompt("Digite o nome do arquivo para salvar:", "lista_compras");
-      if (!nomeArquivo) return;
-      const dados = JSON.parse(localStorage.getItem("listaComprasAuto") || "[]");
-      const blob = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `${nomeArquivo}.json`;
-      a.click();
-    }
+  lista.appendChild(tr);
+}
 
-    function carregarJSON() {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".json";
-      input.onchange = e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = event => {
-          const dados = JSON.parse(event.target.result);
-          lista.innerHTML = "";
-          dados.forEach(item => criarLinha(item.produto, item.qtd, item.valor));
-          atualizarTotal();
-        };
-        reader.readAsText(file);
-      };
-      input.click();
-    }
+function render(){
+  lista.innerHTML = '';
+  itens.forEach((item,i)=>criarLinha(item,i));
+  atualizarTotais();
+}
 
-    function exportarPDF() {
-      const nomeArquivo = prompt("Digite o nome do arquivo PDF:", "lista_compras");
-      if (!nomeArquivo) return;
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+document.getElementById('add').onclick = ()=>{
+  itens.push({produto:'',qtd:'',valor:''});
+  render();
+};
+document.getElementById('clear').onclick = ()=>{
+  if(confirm("Deseja apagar toda a lista?")){
+    itens = [];
+    render();
+  }
+};
+document.getElementById('save').onclick = ()=>{
+  if(!itens.length) return alert("Nada para salvar!");
+  const nome = prompt("Nome do arquivo:", "lista-compras") || "lista-compras";
+  const blob = new Blob([JSON.stringify(itens,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nome + ".json";
+  a.click();
+};
+document.getElementById('load').onclick = ()=>document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange = e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const r = new FileReader();
+  r.onload = ev=>{
+    try{
+      itens = JSON.parse(ev.target.result);
+      render();
+    }catch(err){alert("Arquivo inválido");}
+  };
+  r.readAsText(file);
+  e.target.value='';
+};
+document.getElementById('pdf').onclick = async ()=>{
+  if(!itens.length) return alert("Nada para gerar PDF!");
+  const nome = prompt("Nome do PDF:", "lista-compras") || "lista-compras";
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt',format:'a4'});
+  doc.text("Lista de Compras",40,40);
+  const rows = itens.map(i=>[i.produto,i.qtd||'',i.valor||'',
+    i.qtd && i.valor ? (i.qtd*i.valor).toFixed(2) : ''
+  ]);
+  doc.autoTable({
+    head:[["Produto","Qtd","Valor (R$)","Total (R$)"]],
+    body:rows,
+    startY:60,
+    styles:{fontSize:10},
+    headStyles:{fillColor:[37,99,235],textColor:255}
+  });
+  const total = itens.reduce((s,i)=>s+(i.qtd&&i.valor?(i.qtd*i.valor):0),0);
+  doc.text(`Total Geral: R$ ${total.toFixed(2)}`,40,doc.lastAutoTable.finalY+20);
+  doc.save(nome+".pdf");
+};
 
-      const linhas = [];
-      lista.querySelectorAll("tr").forEach(tr => {
-        const produto = tr.querySelector(".produto").value.trim();
-        const qtd = tr.querySelector(".qtd").value;
-        const valor = tr.querySelector(".valor").value;
-        if (produto) linhas.push([produto, qtd, valor]);
-      });
+if(itens.length===0) itens=[{produto:'',qtd:'',valor:''}];
+render();
 
-      doc.text("Lista de Compras", 14, 10);
-      doc.autoTable({
-        head: [["Produto", "Quantidade", "Valor"]],
-        body: linhas,
-        startY: 15,
-        styles: { fontSize: 10 },
-        theme: 'grid'
-      });
-      doc.text(`Total: ${totalGeralEl.textContent}`, 14, doc.lastAutoTable.finalY + 10);
-      doc.save(`${nomeArquivo}.pdf`);
-    }
-
-    // === Eventos ===
-    document.getElementById("addItem").onclick = () => { criarLinha(); salvarAuto(); };
-    document.getElementById("btnSalvar").onclick = salvarJSON;
-    document.getElementById("btnCarregar").onclick = carregarJSON;
-    document.getElementById("btnPDF").onclick = exportarPDF;
-    document.getElementById("btnLimpar").onclick = () => {
-      if (confirm("Deseja limpar toda a lista?")) {
-        lista.innerHTML = "";
-        criarLinha();
-        atualizarTotal();
-        localStorage.removeItem("listaComprasAuto");
-      }
-    };
-
-    // Confirmação inteligente ao remover item
-    lista.addEventListener("click", e => {
-      if (e.target.closest(".remover")) {
-        const linha = e.target.closest("tr");
-        const produto = linha.querySelector(".produto").value.trim();
-        const qtd = linha.querySelector(".qtd").value;
-        const valor = linha.querySelector(".valor").value;
-        const linhaVazia = !produto && !qtd && !valor;
-
-        if (linhaVazia || confirm("Remover este item?")) {
-          linha.remove();
-          atualizarTotal();
-        }
-      }
-    });
-
-    lista.addEventListener("input", atualizarTotal);
-
-    // Inicialização automática
-    carregarAuto();
-  </script>
+// Registro do Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
 </body>
 </html>
