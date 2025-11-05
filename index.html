@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Lista de Compras</title>
-  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2563eb">
   <link rel="icon" href="icon-192.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -19,11 +18,11 @@
       <table class="w-full text-xs border-collapse">
         <thead>
           <tr class="border-b text-gray-700">
-            <th class="text-left p-1">Produto</th>
-            <th class="text-left p-1 w-12">Qtd</th>
-            <th class="text-left p-1 w-16">Valor</th>
-            <th class="text-left p-1 w-16">Total</th>
-            <th class="p-1 w-8"></th>
+            <th class="text-left p-1 w-3/5">Produto</th>
+            <th class="text-left p-1 w-1/6">Qtd</th>
+            <th class="text-left p-1 w-1/6">Valor</th>
+            <th class="text-left p-1 w-1/6">Total</th>
+            <th class="p-1 w-10"></th>
           </tr>
         </thead>
         <tbody id="lista-compras"></tbody>
@@ -36,7 +35,7 @@
 
     <!-- Botões -->
     <div class="grid grid-cols-5 gap-1 mt-3">
-      <button id="btnAdd" class="bg-blue-500 text-white py-1 text-xs rounded hover:bg-blue-600">+ Item</button>
+      <button id="btnAdd" class="bg-blue-500 text-white py-1 text-xs rounded hover:bg-blue-600">+Item</button>
       <button id="btnExportar" class="bg-green-500 text-white py-1 text-xs rounded hover:bg-green-600">Salvar</button>
       <label for="importarArquivo" class="bg-yellow-500 text-white py-1 text-xs rounded text-center hover:bg-yellow-600 cursor-pointer">Carregar</label>
       <input id="importarArquivo" type="file" accept=".json" class="hidden" />
@@ -48,10 +47,6 @@
   </div>
 
   <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js").catch(()=>{});
-    }
-
     const { jsPDF } = window.jspdf;
 
     const tabela = document.getElementById('lista-compras');
@@ -63,12 +58,12 @@
     const inputImportar = document.getElementById('importarArquivo');
     const msg = document.getElementById('mensagem');
 
-    function criarLinha(produto = "", qtd = 1, valor = 0) {
+    function criarLinha(produto = "", qtd = "", valor = "") {
       const tr = document.createElement("tr");
       tr.classList.add("border-b");
       tr.innerHTML = `
         <td class="p-1"><input type="text" class="produto w-full border rounded p-1 text-xs" value="${produto}" placeholder="Produto"></td>
-        <td class="p-1"><input type="number" class="quantidade w-full border rounded p-1 text-xs text-center" min="1" value="${qtd}"></td>
+        <td class="p-1"><input type="number" class="quantidade w-full border rounded p-1 text-xs text-center" min="0" value="${qtd}"></td>
         <td class="p-1"><input type="number" class="valor w-full border rounded p-1 text-xs text-center" min="0" step="0.01" value="${valor}"></td>
         <td class="p-1 text-right total-item text-gray-700 text-xs">0,00</td>
         <td class="p-1 text-center">
@@ -127,8 +122,8 @@
       const dados = [];
       tabela.querySelectorAll("tr").forEach(linha => {
         const produto = linha.querySelector(".produto").value.trim();
-        const qtd = linha.querySelector(".quantidade").value || "1";
-        const valor = linha.querySelector(".valor").value || "0";
+        const qtd = linha.querySelector(".quantidade").value;
+        const valor = linha.querySelector(".valor").value;
         if (produto) dados.push({ produto, qtd, valor });
       });
       if (dados.length === 0) return alert("A lista está vazia!");
@@ -163,7 +158,7 @@
       e.target.value = "";
     });
 
-    // PDF COM TABELA TABULAR
+    // PDF com tabela
     btnPDF.addEventListener("click", () => {
       const doc = new jsPDF();
       const rows = [];
@@ -175,7 +170,7 @@
         const valor = parseFloat(tr.querySelector(".valor").value) || 0;
         const total = qtd * valor;
         totalGeral += total;
-        rows.push([produto, qtd.toString(), `R$ ${valor.toFixed(2)}`, `R$ ${total.toFixed(2)}`]);
+        rows.push([produto, qtd ? qtd.toString() : "", valor ? `R$ ${valor.toFixed(2)}` : "", `R$ ${total.toFixed(2)}`]);
       });
 
       if (rows.length === 0) {
@@ -205,7 +200,6 @@
       mostrarMensagem("📄 PDF gerado!");
     });
 
-    // inicia com uma linha vazia
     tabela.appendChild(criarLinha());
     atualizarTotais();
   </script>
