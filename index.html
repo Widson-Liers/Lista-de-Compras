@@ -30,7 +30,7 @@
       <p class="text-sm font-semibold">Total: <span id="totalGeral" class="text-green-600">R$ 0,00</span></p>
     </div>
 
-    <!-- Botões pequenos e lado a lado -->
+    <!-- Botões -->
     <div class="grid grid-cols-5 gap-1 mt-3 text-xs">
       <button id="addItem" class="bg-blue-500 text-white rounded py-1 hover:bg-blue-600">+Item</button>
       <button id="btnSalvar" class="bg-green-500 text-white rounded py-1 hover:bg-green-600">Salvar</button>
@@ -44,6 +44,8 @@
     const lista = document.getElementById("lista");
     const totalGeralEl = document.getElementById("totalGeral");
 
+    // === Funções principais ===
+
     function atualizarTotal() {
       let total = 0;
       lista.querySelectorAll("tr").forEach(linha => {
@@ -52,6 +54,7 @@
         total += qtd * valor;
       });
       totalGeralEl.textContent = `R$ ${total.toFixed(2).replace(".", ",")}`;
+      salvarAuto();
     }
 
     function criarLinha(produto = "", qtd = "", valor = "") {
@@ -59,23 +62,44 @@
       tr.className = "border-b";
       tr.innerHTML = `
         <td><input type="text" class="produto w-full border rounded p-1 text-xs" value="${produto}" placeholder="Produto"></td>
-        <td><input type="number" class="qtd w-full border rounded p-1 text-xs" min="0" value="${qtd}" placeholder=""></td>
-        <td><input type="number" class="valor w-full border rounded p-1 text-xs" min="0" step="0.01" value="${valor}" placeholder=""></td>
+        <td><input type="number" class="qtd w-full border rounded p-1 text-xs" min="0" value="${qtd}"></td>
+        <td><input type="number" class="valor w-full border rounded p-1 text-xs" min="0" step="0.01" value="${valor}"></td>
         <td class="text-center"><button class="remover bg-red-500 text-white rounded px-2 py-1 text-xs">X</button></td>
       `;
       lista.appendChild(tr);
     }
 
-    function salvarJSON() {
-      const nomeArquivo = prompt("Digite o nome do arquivo para salvar:", "lista_compras");
-      if (!nomeArquivo) return;
+    // === Persistência automática ===
+
+    function salvarAuto() {
       const dados = [];
       lista.querySelectorAll("tr").forEach(tr => {
         const produto = tr.querySelector(".produto").value.trim();
         const qtd = tr.querySelector(".qtd").value;
         const valor = tr.querySelector(".valor").value;
-        if (produto) dados.push({ produto, qtd, valor });
+        if (produto || qtd || valor) dados.push({ produto, qtd, valor });
       });
+      localStorage.setItem("listaComprasAuto", JSON.stringify(dados));
+    }
+
+    function carregarAuto() {
+      const dados = localStorage.getItem("listaComprasAuto");
+      if (dados) {
+        const itens = JSON.parse(dados);
+        lista.innerHTML = "";
+        itens.forEach(item => criarLinha(item.produto, item.qtd, item.valor));
+      } else {
+        criarLinha();
+      }
+      atualizarTotal();
+    }
+
+    // === Exportações ===
+
+    function salvarJSON() {
+      const nomeArquivo = prompt("Digite o nome do arquivo para salvar:", "lista_compras");
+      if (!nomeArquivo) return;
+      const dados = JSON.parse(localStorage.getItem("listaComprasAuto") || "[]");
       const blob = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -113,9 +137,7 @@
         const produto = tr.querySelector(".produto").value.trim();
         const qtd = tr.querySelector(".qtd").value;
         const valor = tr.querySelector(".valor").value;
-        if (produto) {
-          linhas.push([produto, qtd, valor]);
-        }
+        if (produto) linhas.push([produto, qtd, valor]);
       });
 
       doc.text("Lista de Compras", 14, 10);
@@ -126,12 +148,13 @@
         styles: { fontSize: 10 },
         theme: 'grid'
       });
-
       doc.text(`Total: ${totalGeralEl.textContent}`, 14, doc.lastAutoTable.finalY + 10);
       doc.save(`${nomeArquivo}.pdf`);
     }
 
-    document.getElementById("addItem").onclick = () => criarLinha();
+    // === Eventos ===
+
+    document.getElementById("addItem").onclick = () => { criarLinha(); salvarAuto(); };
     document.getElementById("btnSalvar").onclick = salvarJSON;
     document.getElementById("btnCarregar").onclick = carregarJSON;
     document.getElementById("btnPDF").onclick = exportarPDF;
@@ -140,6 +163,7 @@
         lista.innerHTML = "";
         criarLinha();
         atualizarTotal();
+        localStorage.removeItem("listaComprasAuto");
       }
     };
 
@@ -154,8 +178,8 @@
 
     lista.addEventListener("input", atualizarTotal);
 
-    // Inicial
-    criarLinha();
+    // === Inicialização automática ===
+    carregarAuto();
   </script>
 </body>
 </html>
