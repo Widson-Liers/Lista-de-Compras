@@ -1,256 +1,1378 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lista de Compras</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4CAF50">
-  <style>
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      margin: 0; padding: 0;
-      background: #f7f7f7; color: #333;
-      display: flex; flex-direction: column;
-      min-height: 100vh;
-    }
-    header {
-      background: #4CAF50; color: white;
-      text-align: center; padding: 1rem;
-      font-size: 1.4rem;
-    }
-    main { flex: 1; padding: 1rem; }
-    table {
-      width: 100%;
-      border-spacing: 0 0.5rem;
-    }
-    th, td { text-align: left; padding: 0.5rem; }
-    th.num, td.num { text-align: right; }
-    tr {
-      background: white; border-radius: 8px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
-    input[type="text"], input[type="number"] {
-      width: 100%; border: 1px solid #ccc;
-      border-radius: 4px; padding: 0.4rem;
-      font-size: 1rem;
-    }
-    input:focus { outline: 2px solid #4CAF50; }
-    button {
-      border: none; border-radius: 6px;
-      padding: 0.6rem 1rem; cursor: pointer;
-      font-size: 1rem;
-      background: #4CAF50; color: white;
-      transition: background 0.2s;
-    }
-    button:hover { background: #43A047; }
-    button.delete-btn {
-      background: none; color: #e53935;
-      padding: 0.4rem;
-    }
-    button.delete-btn:hover { color: #b71c1c; }
-    .toolbar {
-      display: flex; flex-wrap: wrap;
-      gap: 0.5rem; justify-content: center;
-      padding: 1rem; background: white;
-      border-top: 1px solid #ddd;
-    }
-    @media (max-width: 600px) {
-      th:nth-child(1), td:nth-child(1) { width: 45%; }
-      th:nth-child(2), th:nth-child(3), th:nth-child(4) { width: 15%; }
-      th:nth-child(5) { width: 10%; }
-    }
-    .total-geral {
-      text-align: right; margin-top: 1rem;
-      font-weight: bold;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4CAF50">
+    <title>Lista de Compras</title>
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Bibliotecas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 24px;
+            font-size: 32px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .lists-controls {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .lists-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+        
+        .tab-btn {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            position: relative;
+        }
+        
+        .tab-btn:hover {
+            border-color: #667eea;
+            background: #f5f5ff;
+        }
+        
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .tab-close {
+            margin-left: 4px;
+            font-size: 16px;
+            opacity: 0.7;
+            padding: 0 4px;
+        }
+        
+        .tab-close:hover {
+            opacity: 1;
+        }
+        
+        .tab-btn.active .tab-close {
+            color: white;
+        }
+        
+        .btn-add-list {
+            padding: 8px 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        
+        .btn-add-list:hover {
+            background: #45a049;
+        }
+        
+        .list-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 24px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .list-card.active {
+            display: block;
+        }
+        
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 12px;
+        }
+        
+        .list-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #667eea;
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        .list-title:hover {
+            border-color: #ddd;
+        }
+        
+        .list-title.editing {
+            border-color: #667eea;
+            background: #f9f9f9;
+        }
+        
+        .list-total {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 3px;
+        }
+        
+        thead th {
+            background: #f5f5f5;
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            position: sticky;
+            top: 0;
+            font-size: 14px;
+        }
+        
+        thead th:nth-child(2),
+        thead th:nth-child(3),
+        thead th:nth-child(4) {
+            text-align: right;
+        }
+        
+        tbody tr {
+            background: #fafafa;
+            border-radius: 8px;
+        }
+        
+        tbody td {
+            padding: 8px 8px;
+            vertical-align: middle;
+        }
+        
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+        
+        /* Remover setas dos inputs numéricos */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+        
+        .num {
+            text-align: right;
+        }
+        
+        input[type="number"].num {
+            padding-right: 8px;
+            padding-left: 6px;
+        }
+        
+        .total-display {
+            background: #f0f0f0;
+            padding: 10px 8px;
+            border-radius: 6px;
+            text-align: right;
+            font-weight: 600;
+            color: #555;
+            min-height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            font-size: 16px;
+        }
+        
+        .btn-delete {
+            background: #ff5252;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        
+        .btn-delete:hover {
+            background: #ff1744;
+        }
+        
+        .btn-delete:active {
+            transform: scale(0.95);
+        }
+        
+        .trash-icon {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+        
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #45a049;
+        }
+        
+        .btn-secondary {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #0b7dda;
+        }
+        
+        .btn-warning {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #e68900;
+        }
+        
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #da190b;
+        }
+        
+        .btn-info {
+            background: #9C27B0;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background: #7b1fa2;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .grand-total-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 24px;
+            text-align: center;
+        }
+        
+        .grand-total-card h2 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 20px;
+        }
+        
+        .grand-total-amount {
+            font-size: 36px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 24px;
+                margin-bottom: 16px;
+            }
+            
+            .lists-controls {
+                padding: 12px;
+            }
+            
+            .list-card {
+                padding: 16px;
+            }
+            
+            .list-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .list-title {
+                font-size: 18px;
+            }
+            
+            .list-total {
+                text-align: center;
+                font-size: 16px;
+            }
+            
+            table {
+                font-size: 15px;
+            }
+            
+            thead th {
+                padding: 8px 6px;
+                font-size: 13px;
+            }
+            
+            tbody td {
+                padding: 6px 6px;
+            }
+            
+            input[type="text"],
+            input[type="number"] {
+                padding: 8px 6px;
+                font-size: 15px;
+            }
+            
+            input[type="number"].num {
+                padding-right: 6px;
+                padding-left: 4px;
+            }
+            
+            .total-display {
+                padding: 8px 6px;
+                font-size: 15px;
+                min-height: 38px;
+            }
+            
+            .btn {
+                padding: 10px 16px;
+                font-size: 13px;
+            }
+            
+            .toolbar {
+                gap: 8px;
+            }
+            
+            .grand-total-amount {
+                font-size: 28px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .list-card {
+                padding: 12px;
+                border-radius: 12px;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+            
+            thead th {
+                padding: 6px 4px;
+                font-size: 12px;
+            }
+            
+            tbody td {
+                padding: 5px 4px;
+            }
+            
+            input[type="text"],
+            input[type="number"] {
+                padding: 7px 5px;
+                font-size: 14px;
+            }
+            
+            input[type="number"].num {
+                padding-right: 5px;
+                padding-left: 3px;
+            }
+            
+            .total-display {
+                padding: 7px 5px;
+                font-size: 14px;
+                min-height: 36px;
+            }
+            
+            .btn-delete {
+                width: 32px;
+                height: 32px;
+            }
+            
+            .trash-icon {
+                width: 16px;
+                height: 16px;
+            }
+            
+            .btn {
+                flex: 1 1 calc(50% - 4px);
+                min-width: 120px;
+                justify-content: center;
+            }
+            
+            .grand-total-amount {
+                font-size: 24px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <header>🛒 Lista de Compras</header>
-  <main>
-    <table id="tabela">
-      <thead>
-        <tr>
-          <th>Produto</th>
-          <th class="num">Qtd</th>
-          <th class="num">Valor</th>
-          <th class="num">Total</th>
-          <th>Ação</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <div class="total-geral" id="totalGeral"></div>
-  </main>
-  <div class="toolbar">
-    <button id="addBtn" title="Adicionar linha" aria-label="Adicionar">➕ Adicionar</button>
-    <button id="saveBtn" title="Salvar JSON" aria-label="Salvar">💾 Salvar</button>
-    <button id="loadBtn" title="Carregar JSON" aria-label="Carregar">📂 Carregar</button>
-    <button id="clearBtn" title="Limpar lista" aria-label="Limpar">🧹 Limpar</button>
-    <button id="pdfBtn" title="Gerar PDF" aria-label="Gerar PDF">📄 PDF</button>
-  </div>
+    <div class="container">
+        <h1>🛒 Minhas Listas de Compras</h1>
+        
+        <div class="lists-controls">
+            <div class="lists-tabs" id="listsTabs"></div>
+            <button class="btn-add-list" onclick="addNewList()" title="Criar nova lista">
+                ➕ Nova
+            </button>
+        </div>
+        
+        <div id="listsContainer"></div>
+        
+        <div class="grand-total-card">
+            <h2>💰 Total Geral de Todas as Listas</h2>
+            <div class="grand-total-amount" id="grandTotalAll">R$ 0,00</div>
+            <div class="toolbar" style="margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="saveAllToFile()" title="Salvar todas as listas">
+                    💾 Salvar Tudo
+                </button>
+                <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()" title="Carregar todas as listas">
+                    📂 Carregar Tudo
+                </button>
+                <button class="btn btn-info" onclick="generateAllPDF()" title="Gerar PDF de todas as listas">
+                    📄 PDF Completo
+                </button>
+            </div>
+        </div>
+        
+        <input type="file" id="fileInput" accept=".json" onchange="loadFromFile(event)">
+    </div>
 
-  <!-- Bibliotecas -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-  <script>
-    const tbody = document.querySelector('#tabela tbody');
-    const totalGeralEl = document.getElementById('totalGeral');
-
-    function salvarLocalStorage() {
-      const linhas = [...tbody.querySelectorAll('tr')].map(tr => {
-        const [produto, qtd, valor] = tr.querySelectorAll('input');
-        return {
-          produto: produto.value.trim(),
-          qtd: qtd.value ? parseFloat(qtd.value) : '',
-          valor: valor.value ? parseFloat(valor.value) : ''
-        };
-      });
-      localStorage.setItem('listaCompras', JSON.stringify(linhas));
-    }
-
-    function carregarLocalStorage() {
-      const dados = JSON.parse(localStorage.getItem('listaCompras') || '[]');
-      if (dados.length === 0) addLinha();
-      else dados.forEach(d => addLinha(d));
-    }
-
-    function addLinha(item = { produto:'', qtd:'', valor:'' }) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><input type="text" value="${item.produto}" aria-label="Produto"></td>
-        <td><input type="number" value="${item.qtd}" aria-label="Quantidade"></td>
-        <td><input type="number" step="0.01" value="${item.valor}" aria-label="Valor"></td>
-        <td class="num total"></td>
-        <td><button class="delete-btn" title="Excluir" aria-label="Excluir linha">
-          🗑️
-        </button></td>
-      `;
-      tbody.appendChild(tr);
-
-      const [produto, qtd, valor] = tr.querySelectorAll('input');
-      const totalCell = tr.querySelector('.total');
-
-      function atualizarTotal() {
-        const q = parseFloat(qtd.value);
-        const v = parseFloat(valor.value);
-        if (!isNaN(q) && !isNaN(v)) totalCell.textContent = (q * v).toFixed(2);
-        else totalCell.textContent = '';
-        atualizarTotalGeral();
-        salvarLocalStorage();
-      }
-
-      produto.addEventListener('input', salvarLocalStorage);
-      qtd.addEventListener('input', atualizarTotal);
-      valor.addEventListener('input', atualizarTotal);
-
-      tr.querySelector('.delete-btn').addEventListener('click', () => {
-        const temDados = produto.value || qtd.value || valor.value;
-        if (!temDados || confirm('Excluir esta linha?')) {
-          tr.remove();
-          atualizarTotalGeral();
-          salvarLocalStorage();
+    <script>
+        let lists = [];
+        let currentListId = null;
+        let nextListId = 1;
+        const STORAGE_KEY = 'shoppingListsData';
+        
+        // Registrar Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker registrado'))
+                .catch(() => console.log('Service Worker não disponível'));
         }
-      });
-
-      atualizarTotal();
-      produto.focus();
-    }
-
-    function atualizarTotalGeral() {
-      let total = 0;
-      tbody.querySelectorAll('tr').forEach(tr => {
-        const val = parseFloat(tr.querySelector('.total').textContent);
-        if (!isNaN(val)) total += val;
-      });
-      totalGeralEl.textContent = total ? `Total geral: R$ ${total.toFixed(2)}` : '';
-    }
-
-    document.getElementById('addBtn').onclick = () => addLinha();
-
-    document.getElementById('saveBtn').onclick = () => {
-      const nome = prompt('Nome do arquivo:', 'lista_compras').replace(/[\\/]/g, '_');
-      if (!nome) return;
-      const blob = new Blob([localStorage.getItem('listaCompras')], {type:'application/json'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = nome + '.json';
-      a.click();
-    };
-
-    document.getElementById('loadBtn').onclick = () => {
-      const input = document.createElement('input');
-      input.type = 'file'; input.accept = '.json';
-      input.onchange = e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          try {
-            const dados = JSON.parse(reader.result);
-            if (!Array.isArray(dados)) throw 'Formato inválido';
+        
+        // Carregar dados do localStorage ao iniciar
+        function loadFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    lists = data.lists || [];
+                    nextListId = data.nextListId || 1;
+                    currentListId = data.currentListId || null;
+                }
+            } catch (e) {
+                console.error('Erro ao carregar do localStorage:', e);
+                lists = [];
+            }
+            
+            if (lists.length === 0) {
+                addNewList();
+            } else {
+                if (!currentListId || !lists.find(l => l.id === currentListId)) {
+                    currentListId = lists[0].id;
+                }
+                renderLists();
+            }
+        }
+        
+        // Salvar no localStorage
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    lists,
+                    nextListId,
+                    currentListId
+                }));
+            } catch (e) {
+                console.error('Erro ao salvar no localStorage:', e);
+            }
+        }
+        
+        // Adicionar nova lista
+        function addNewList() {
+            const name = prompt('Nome da nova lista:', `Lista ${nextListId}`);
+            if (!name || !name.trim()) return;
+            
+            const newList = {
+                id: nextListId++,
+                name: name.trim(),
+                items: [{ produto: '', qtd: '', valor: '' }]
+            };
+            
+            lists.push(newList);
+            currentListId = newList.id;
+            saveToLocalStorage();
+            renderLists();
+        }
+        
+        // Excluir lista
+        function deleteList(listId) {
+            if (lists.length === 1) {
+                alert('Você precisa ter pelo menos uma lista!');
+                return;
+            }
+            
+            if (!confirm('Deseja realmente excluir esta lista?')) {
+                return;
+            }
+            
+            lists = lists.filter(l => l.id !== listId);
+            
+            if (currentListId === listId) {
+                currentListId = lists[0].id;
+            }
+            
+            saveToLocalStorage();
+            renderLists();
+        }
+        
+        // Renomear lista
+        function renameList(listId) {
+            const list = lists.find(l => l.id === listId);
+            if (!list) return;
+            
+            const newName = prompt('Novo nome da lista:', list.name);
+            if (newName && newName.trim()) {
+                list.name = newName.trim();
+                saveToLocalStorage();
+                renderLists();
+            }
+        }
+        
+        // Renderizar todas as listas
+        function renderLists() {
+            renderTabs();
+            renderListCards();
+            updateAllTotals();
+        }
+        
+        // Renderizar abas
+        function renderTabs() {
+            const tabsContainer = document.getElementById('listsTabs');
+            tabsContainer.innerHTML = '';
+            
+            lists.forEach(list => {
+                const tab = document.createElement('button');
+                tab.className = `tab-btn ${list.id === currentListId ? 'active' : ''}`;
+                tab.onclick = () => switchList(list.id);
+                tab.ondblclick = () => renameList(list.id);
+                tab.title = 'Clique para selecionar, duplo clique para renomear';
+                
+                tab.innerHTML = `
+                    <span>${escapeHtml(list.name)}</span>
+                    ${lists.length > 1 ? `<span class="tab-close" onclick="event.stopPropagation(); deleteList(${list.id})">×</span>` : ''}
+                `;
+                
+                tabsContainer.appendChild(tab);
+            });
+        }
+        
+        // Renderizar cards das listas
+        function renderListCards() {
+            const container = document.getElementById('listsContainer');
+            container.innerHTML = '';
+            
+            lists.forEach(list => {
+                const card = document.createElement('div');
+                card.className = `list-card ${list.id === currentListId ? 'active' : ''}`;
+                card.id = `list-${list.id}`;
+                
+                card.innerHTML = `
+                    <div class="list-header">
+                        <div class="list-title" onclick="renameList(${list.id})" title="Clique para renomear">
+                            ${escapeHtml(list.name)}
+                        </div>
+                        <div class="list-total" id="total-${list.id}">R$ 0,00</div>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 50%;">Produto</th>
+                                    <th style="width: 15%;">Qtd</th>
+                                    <th style="width: 15%;">Valor</th>
+                                    <th style="width: 15%;">Total</th>
+                                    <th style="width: 5%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody-${list.id}">
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="toolbar">
+                        <button class="btn btn-primary" onclick="addRow(${list.id})" title="Adicionar novo item">
+                            ➕ Item
+                        </button>
+                        <button class="btn btn-danger" onclick="clearList(${list.id})" title="Limpar esta lista">
+                            🗑️ Limpar
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+            
+            // Renderizar itens de cada lista
+            lists.forEach(list => {
+                renderTable(list.id);
+            });
+        }
+        
+        // Trocar lista ativa
+        function switchList(listId) {
+            currentListId = listId;
+            saveToLocalStorage();
+            
+            document.querySelectorAll('.tab-btn').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.list-card').forEach(card => card.classList.remove('active'));
+            
+            event.target.closest('.tab-btn').classList.add('active');
+            document.getElementById(`list-${listId}`).classList.add('active');
+        }
+        
+        // Renderizar tabela de uma lista
+        function renderTable(listId) {
+            const list = lists.find(l => l.id === listId);
+            if (!list) return;
+            
+            const tbody = document.getElementById(`tableBody-${listId}`);
             tbody.innerHTML = '';
-            dados.forEach(d => addLinha(d));
-            salvarLocalStorage();
-          } catch {
-            alert('Arquivo JSON inválido.');
-          }
-        };
-        reader.readAsText(file);
-      };
-      input.click();
-    };
-
-    document.getElementById('clearBtn').onclick = () => {
-      if (confirm('Tem certeza que deseja limpar tudo?')) {
-        tbody.innerHTML = '';
-        addLinha();
-        salvarLocalStorage();
-      }
-    };
-
-    document.getElementById('pdfBtn').onclick = async () => {
-      const nome = prompt('Nome do PDF:', 'lista_compras').replace(/[\\/]/g, '_');
-      if (!nome) return;
-      const dados = [...tbody.querySelectorAll('tr')].map(tr => {
-        const [p, q, v] = tr.querySelectorAll('input');
-        return [p.value, q.value, v.value, tr.querySelector('.total').textContent];
-      });
-
-      const hasUnicode = JSON.stringify(dados).match(/[^\u0000-\u007f]/);
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      try {
-        if (!hasUnicode) {
-          doc.text('Lista de Compras', 14, 15);
-          doc.autoTable({
-            head: [['Produto','Qtd','Valor','Total']],
-            body: dados,
-            startY: 20
-          });
-          doc.text(totalGeralEl.textContent, 14, doc.lastAutoTable.finalY + 10);
-          doc.save(nome + '.pdf');
-        } else {
-          throw 'Unicode';
+            
+            list.items.forEach((item, index) => {
+                const row = document.createElement('tr');
+                
+                const total = (item.qtd && item.valor) ? (parseFloat(item.qtd) * parseFloat(item.valor)) : '';
+                const totalDisplay = total !== '' ? `R$ ${total.toFixed(2).replace('.', ',')}` : '';
+                
+                row.innerHTML = `
+                    <td>
+                        <input type="text" 
+                               value="${escapeHtml(item.produto)}" 
+                               data-list="${listId}"
+                               data-index="${index}" 
+                               data-field="produto"
+                               aria-label="Produto"
+                               placeholder="Nome do produto">
+                    </td>
+                    <td>
+                        <input type="number" 
+                               class="num" 
+                               value="${item.qtd}" 
+                               data-list="${listId}"
+                               data-index="${index}" 
+                               data-field="qtd"
+                               aria-label="Quantidade"
+                               placeholder="0"
+                               min="0"
+                               step="1">
+                    </td>
+                    <td>
+                        <input type="number" 
+                               class="num" 
+                               value="${item.valor}" 
+                               data-list="${listId}"
+                               data-index="${index}" 
+                               data-field="valor"
+                               aria-label="Valor unitário"
+                               placeholder="0.00"
+                               min="0"
+                               step="0.01">
+                    </td>
+                    <td>
+                        <div class="total-display" data-list="${listId}" data-total="${index}">${totalDisplay}</div>
+                    </td>
+                    <td>
+                        <button class="btn-delete" 
+                                onclick="deleteRow(${listId}, ${index})" 
+                                title="Excluir item"
+                                aria-label="Excluir item">
+                            <svg class="trash-icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                            </svg>
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            // Adicionar event listeners
+            document.querySelectorAll(`#tableBody-${listId} input`).forEach(input => {
+                input.addEventListener('input', handleInput);
+            });
+            
+            updateListTotal(listId);
+            
+            // Focar no primeiro campo vazio se for nova linha
+            if (list.items.length > 0) {
+                const lastItem = list.items[list.items.length - 1];
+                if (!lastItem.produto && !lastItem.qtd && !lastItem.valor) {
+                    const inputs = tbody.querySelectorAll(`input[data-index="${list.items.length - 1}"]`);
+                    if (inputs[0]) inputs[0].focus();
+                }
+            }
         }
-      } catch {
-        const canvas = await html2canvas(document.querySelector('main'));
-        const img = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({ orientation: 'portrait' });
-        pdf.addImage(img, 'PNG', 10, 10, 190, 0);
-        pdf.save(nome + '.pdf');
-      }
-    };
-
-    carregarLocalStorage();
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(()=>{});
-    }
-  </script>
+        
+        // Handler de input
+        function handleInput(e) {
+            const listId = parseInt(e.target.dataset.list);
+            const index = parseInt(e.target.dataset.index);
+            const field = e.target.dataset.field;
+            const value = e.target.value;
+            
+            const list = lists.find(l => l.id === listId);
+            if (!list) return;
+            
+            list.items[index][field] = value;
+            
+            // Atualizar apenas o total dessa linha
+            if (field === 'qtd' || field === 'valor') {
+                updateRowTotal(listId, index);
+            }
+            
+            saveToLocalStorage();
+        }
+        
+        // Atualizar total de uma linha específica
+        function updateRowTotal(listId, index) {
+            const list = lists.find(l => l.id === listId);
+            if (!list) return;
+            
+            const item = list.items[index];
+            const totalEl = document.querySelector(`[data-list="${listId}"][data-total="${index}"]`);
+            
+            if (totalEl) {
+                const total = (item.qtd && item.valor) ? (parseFloat(item.qtd) * parseFloat(item.valor)) : '';
+                totalEl.textContent = total !== '' ? `R$ ${total.toFixed(2).replace('.', ',')}` : '';
+            }
+            
+            updateListTotal(listId);
+            updateGrandTotal();
+        }
+        
+        // Atualizar total de uma lista
+        function updateListTotal(listId) {
+            const list = lists.find(l => l.id === listId);
+            if (!list) return;
+            
+            let total = 0;
+            list.items.forEach(item => {
+                if (item.qtd && item.valor) {
+                    total += parseFloat(item.qtd) * parseFloat(item.valor);
+                }
+            });
+            
+            const totalEl = document.getElementById(`total-${listId}`);
+            if (totalEl) {
+                totalEl.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+            }
+        }
+        
+        // Atualizar todos os totais
+        function updateAllTotals() {
+            lists.forEach(list => {
+                updateListTotal(list.id);
+            });
+            updateGrandTotal();
+        }
+        
+        // Atualizar total geral de todas as listas
+        function updateGrandTotal() {
+            let grandTotal = 0;
+            
+            lists.forEach(list => {
+                list.items.forEach(item => {
+                    if (item.qtd && item.valor) {
+                        grandTotal += parseFloat(item.qtd) * parseFloat(item.valor);
+                    }
+                });
+            });
+            
+            document.getElementById('grandTotalAll').textContent = `R$ ${grandTotal.toFixed(2).replace('.', ',')}`;
+        }
+        
+        // Adicionar linha
+        function addRow(listId) {
+            const list = lists.find(l => l.id === listId);
+            if (!list) return;
+            
+            list.items.push({ produto: '', qtd: '', valor: '' });
+            saveToLocalStorage();
+            renderTable(listId);
+        }
+        
+        // Excluir linha
+        function deleteRow(listId, index) {
+            const list = lists.find(l => l.id === listId);
+            if (!list) return;
+            
+            const item = list.items[index];
+            const isEmpty = !item.produto && !item.qtd && !item.valor;
+            
+            if (!isEmpty) {
+                if (!confirm('Deseja realmente excluir este item?')) {
+                    return;
+                }
+            }
+            
+            list.items.splice(index, 1);
+            
+            if (list.items.length === 0) {
+                list.items = [{ produto: '', qtd: '', valor: '' }];
+            }
+            
+            saveToLocalStorage();
+            renderTable(listId);
+            updateGrandTotal();
+        }
+        
+        // Limpar lista
+        function clearList(listId) {
+            if (!confirm('Deseja realmente limpar toda esta lista?')) {
+                return;
+            }
+            
+            const list = lists.find(l => l.id === listId);
+            if (!list) return;
+            
+            list.items = [{ produto: '', qtd: '', valor: '' }];
+            saveToLocalStorage();
+            renderTable(listId);
+            updateGrandTotal();
+        }
+        
+        // Salvar em arquivo (lista individual)
+        function saveToFile(listId) {
+            const list = lists.find(l => l.id === listId);
+            if (!list) return;
+            
+            const filename = prompt('Nome do arquivo:', list.name.toLowerCase().replace(/\s+/g, '-'));
+            if (!filename) return;
+            
+            const safeName = filename.replace(/[\/\\]/g, '_') + '.json';
+            const dataStr = JSON.stringify(list.items, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = safeName;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            alert('Lista salva com sucesso!');
+        }
+        
+        // Salvar todas as listas em arquivo
+        function saveAllToFile() {
+            const filename = prompt('Nome do arquivo:', 'minhas-listas-compras');
+            if (!filename) return;
+            
+            const safeName = filename.replace(/[\/\\]/g, '_') + '.json';
+            const dataStr = JSON.stringify({ lists, nextListId }, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = safeName;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            alert('Todas as listas foram salvas com sucesso!');
+        }
+        
+        // Carregar de arquivo
+        function loadFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Verificar se é um arquivo de todas as listas
+                    if (data.lists && Array.isArray(data.lists)) {
+                        // Carregar todas as listas
+                        if (!confirm('Isso irá substituir todas as listas atuais. Continuar?')) {
+                            return;
+                        }
+                        
+                        lists = data.lists.map(list => ({
+                            id: list.id,
+                            name: list.name || `Lista ${list.id}`,
+                            items: list.items.map(item => ({
+                                produto: item.produto || '',
+                                qtd: item.qtd || '',
+                                valor: item.valor || ''
+                            }))
+                        }));
+                        
+                        nextListId = data.nextListId || lists.length + 1;
+                        currentListId = lists.length > 0 ? lists[0].id : null;
+                        
+                        saveToLocalStorage();
+                        renderLists();
+                        alert('Todas as listas foram carregadas com sucesso!');
+                    } else if (Array.isArray(data)) {
+                        // Arquivo antigo - apenas itens de uma lista
+                        const list = lists.find(l => l.id === currentListId);
+                        if (!list) return;
+                        
+                        list.items = data.map(item => ({
+                            produto: item.produto || '',
+                            qtd: item.qtd || '',
+                            valor: item.valor || ''
+                        }));
+                        
+                        if (list.items.length === 0) {
+                            list.items = [{ produto: '', qtd: '', valor: '' }];
+                        }
+                        
+                        saveToLocalStorage();
+                        renderTable(currentListId);
+                        updateGrandTotal();
+                        alert('Lista carregada com sucesso!');
+                    } else {
+                        throw new Error('Formato inválido');
+                    }
+                } catch (error) {
+                    alert('Erro ao carregar arquivo: formato inválido');
+                }
+            };
+            
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+        
+        // Gerar PDF de todas as listas
+        async function generateAllPDF() {
+            const filename = prompt('Nome do arquivo PDF:', 'todas-listas-compras');
+            if (!filename) return;
+            
+            const safeName = filename.replace(/[\/\\]/g, '_') + '.pdf';
+            
+            try {
+                await generateAllPDFWithTable(safeName);
+            } catch (error) {
+                console.error('Erro ao gerar PDF:', error);
+                alert('Erro ao gerar PDF. Tente novamente.');
+            }
+        }
+        
+        async function generateAllPDFWithTable(filename) {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                let startY = 20;
+                
+                // Título principal
+                doc.setFontSize(20);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Todas as Listas de Compras', 105, startY, { align: 'center' });
+                startY += 15;
+                
+                // Calcular total geral
+                let grandTotal = 0;
+                lists.forEach(list => {
+                    list.items.forEach(item => {
+                        if (item.qtd && item.valor) {
+                            grandTotal += parseFloat(item.qtd) * parseFloat(item.valor);
+                        }
+                    });
+                });
+                
+                // Mostrar total geral no topo
+                doc.setFontSize(14);
+                doc.setTextColor(102, 126, 234);
+                doc.text(`Total Geral: R$ ${grandTotal.toFixed(2).replace('.', ',')}`, 105, startY, { align: 'center' });
+                doc.setTextColor(0, 0, 0);
+                startY += 15;
+                
+                // Processar cada lista
+                lists.forEach((list, listIndex) => {
+                    // Verificar se precisa de nova página
+                    if (startY > 250) {
+                        doc.addPage();
+                        startY = 20;
+                    }
+                    
+                    // Nome da lista
+                    doc.setFontSize(16);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(102, 126, 234);
+                    doc.text(list.name, 15, startY);
+                    doc.setTextColor(0, 0, 0);
+                    startY += 5;
+                    
+                    // Preparar dados da tabela
+                    const tableData = list.items
+                        .filter(item => item.produto || item.qtd || item.valor)
+                        .map(item => {
+                            const qtd = item.qtd || '';
+                            const valor = item.valor ? parseFloat(item.valor).toFixed(2).replace('.', ',') : '';
+                            const total = (item.qtd && item.valor) ? 
+                                (parseFloat(item.qtd) * parseFloat(item.valor)).toFixed(2).replace('.', ',') : '';
+                            
+                            return [
+                                item.produto || '',
+                                qtd,
+                                valor ? `R$ ${valor}` : '',
+                                total ? `R$ ${total}` : ''
+                            ];
+                        });
+                    
+                    // Calcular total da lista
+                    let listTotal = 0;
+                    list.items.forEach(item => {
+                        if (item.qtd && item.valor) {
+                            listTotal += parseFloat(item.qtd) * parseFloat(item.valor);
+                        }
+                    });
+                    
+                    // Gerar tabela com autoTable
+                    doc.autoTable({
+                        startY: startY,
+                        head: [['Produto', 'Qtd', 'Valor Unit.', 'Total']],
+                        body: tableData,
+                        foot: [[`Subtotal (${list.name})`, '', '', `R$ ${listTotal.toFixed(2).replace('.', ',')}`]],
+                        theme: 'grid',
+                        styles: {
+                            font: 'helvetica',
+                            fontSize: 9,
+                            cellPadding: 4,
+                            overflow: 'linebreak',
+                            halign: 'left'
+                        },
+                        headStyles: { 
+                            fillColor: [102, 126, 234],
+                            textColor: 255,
+                            fontStyle: 'bold',
+                            halign: 'center',
+                            fontSize: 10
+                        },
+                        footStyles: { 
+                            fillColor: [200, 200, 220],
+                            textColor: 0,
+                            fontStyle: 'bold',
+                            halign: 'right'
+                        },
+                        columnStyles: {
+                            0: { cellWidth: 80 },
+                            1: { cellWidth: 25, halign: 'center' },
+                            2: { cellWidth: 35, halign: 'right' },
+                            3: { cellWidth: 35, halign: 'right' }
+                        },
+                        margin: { left: 15, right: 15 }
+                    });
+                    
+                    startY = doc.lastAutoTable.finalY + 12;
+                });
+                
+                // Adicionar resumo final na última página
+                if (startY > 240) {
+                    doc.addPage();
+                    startY = 20;
+                }
+                
+                doc.setFontSize(16);
+                doc.setFont('helvetica', 'bold');
+                doc.setFillColor(102, 126, 234);
+                doc.rect(15, startY, 180, 15, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.text(`TOTAL GERAL: R$ ${grandTotal.toFixed(2).replace('.', ',')}`, 105, startY + 10, { align: 'center' });
+                
+                doc.save(filename);
+                alert('PDF completo gerado com sucesso!');
+                return true;
+            } catch (error) {
+                console.error('Erro ao gerar PDF:', error);
+                throw error;
+            }
+        }
+        
+        // Gerar PDF (lista individual)
+        async function generatePDF(listId) {
+            const list = lists.find(l => l.id === listId);
+            if (!list) return;
+            
+            const filename = prompt('Nome do arquivo PDF:', list.name.toLowerCase().replace(/\s+/g, '-'));
+            if (!filename) return;
+            
+            const safeName = filename.replace(/[\/\\]/g, '_') + '.pdf';
+            
+            try {
+                const success = await generatePDFWithTable(list, safeName);
+                
+                if (!success) {
+                    await generatePDFWithCanvas(listId, safeName);
+                }
+            } catch (error) {
+                console.error('Erro ao gerar PDF:', error);
+                alert('Erro ao gerar PDF. Tente novamente.');
+            }
+        }
+        
+        async function generatePDFWithTable(list, filename) {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Título
+                doc.setFontSize(18);
+                doc.setFont('helvetica', 'bold');
+                doc.text(list.name, 105, 15, { align: 'center' });
+                
+                // Preparar dados da tabela
+                const tableData = list.items
+                    .filter(item => item.produto || item.qtd || item.valor)
+                    .map(item => {
+                        const qtd = item.qtd || '';
+                        const valor = item.valor ? parseFloat(item.valor).toFixed(2).replace('.', ',') : '';
+                        const total = (item.qtd && item.valor) ? 
+                            (parseFloat(item.qtd) * parseFloat(item.valor)).toFixed(2).replace('.', ',') : '';
+                        
+                        return [
+                            item.produto || '',
+                            qtd,
+                            valor ? `R$ ${valor}` : '',
+                            total ? `R$ ${total}` : ''
+                        ];
+                    });
+                
+                // Calcular total
+                let total = 0;
+                list.items.forEach(item => {
+                    if (item.qtd && item.valor) {
+                        total += parseFloat(item.qtd) * parseFloat(item.valor);
+                    }
+                });
+                
+                // Gerar tabela com autoTable
+                doc.autoTable({
+                    startY: 25,
+                    head: [['Produto', 'Qtd', 'Valor Unit.', 'Total']],
+                    body: tableData,
+                    foot: [['TOTAL', '', '', `R$ ${total.toFixed(2).replace('.', ',')}`]],
+                    theme: 'grid',
+                    styles: {
+                        font: 'helvetica',
+                        fontSize: 10,
+                        cellPadding: 5,
+                        overflow: 'linebreak',
+                        halign: 'left'
+                    },
+                    headStyles: { 
+                        fillColor: [102, 126, 234],
+                        textColor: 255,
+                        fontStyle: 'bold',
+                        halign: 'center'
+                    },
+                    footStyles: { 
+                        fillColor: [102, 126, 234],
+                        textColor: 255,
+                        fontStyle: 'bold',
+                        halign: 'right'
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 80 },
+                        1: { cellWidth: 25, halign: 'center' },
+                        2: { cellWidth: 35, halign: 'right' },
+                        3: { cellWidth: 35, halign: 'right' }
+                    },
+                    margin: { top: 25, left: 15, right: 15 }
+                });
+                
+                doc.save(filename);
+                alert('PDF gerado com sucesso! (tabela de texto)');
+                return true;
+            } catch (error) {
+                console.error('Erro ao gerar PDF com tabela:', error);
+                
+                const hasSpecialChars = list.items.some(item => 
+                    /[^\x00-\x7F]/.test(item.produto)
+                );
+                
+                if (hasSpecialChars) {
+                    console.log('Detectados caracteres especiais, usando fallback de imagem...');
+                    return false;
+                }
+                
+                throw error;
+            }
+        }
+        
+        async function generatePDFWithCanvas(listId, filename) {
+            const card = document.getElementById(`list-${listId}`);
+            const table = card.querySelector('table');
+            
+            const canvas = await html2canvas(table, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                logging: false
+            });
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const list = lists.find(l => l.id === listId);
+            
+            // Título
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text(list.name, 105, 15, { align: 'center' });
+            
+            // Adicionar imagem da tabela
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = 180;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            let heightLeft = imgHeight;
+            let position = 25;
+            
+            doc.addImage(imgData, 'PNG', 15, position, imgWidth, imgHeight);
+            heightLeft -= (doc.internal.pageSize.height - position);
+            
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight + 10;
+                doc.addPage();
+                doc.addImage(imgData, 'PNG', 15, position, imgWidth, imgHeight);
+                heightLeft -= (doc.internal.pageSize.height - 10);
+            }
+            
+            doc.save(filename);
+            alert('PDF gerado com sucesso! (modo imagem - preserva acentos)');
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Inicializar
+        loadFromLocalStorage();
+    </script>
 </body>
 </html>
