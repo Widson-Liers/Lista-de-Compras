@@ -51,6 +51,11 @@
             flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
+            transition: all 0.3s ease;
+        }
+        
+        .lists-controls.hidden {
+            padding: 8px 12px;
         }
         
         .lists-tabs {
@@ -58,6 +63,34 @@
             gap: 6px;
             flex-wrap: wrap;
             flex: 1;
+            transition: all 0.3s ease;
+        }
+        
+        .lists-tabs.hidden {
+            display: none;
+        }
+        
+        .controls-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        
+        .btn-toggle-tabs {
+            padding: 8px 12px;
+            background: #666;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        
+        .btn-toggle-tabs:hover {
+            background: #555;
         }
         
         .tab-btn {
@@ -122,7 +155,7 @@
             background: white;
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 24px;
+            padding: 20px;
             margin-bottom: 20px;
             display: none;
         }
@@ -135,16 +168,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             gap: 12px;
         }
         
         .list-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 600;
             color: #667eea;
             flex: 1;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border: 2px solid transparent;
             border-radius: 6px;
             cursor: pointer;
@@ -160,16 +193,6 @@
             background: #f9f9f9;
         }
         
-        .list-total {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-        
         .table-wrapper {
             overflow-x: auto;
             margin-bottom: 20px;
@@ -183,13 +206,13 @@
         
         thead th {
             background: #f5f5f5;
-            padding: 10px 8px;
+            padding: 14px 10px;
             text-align: left;
             font-weight: 600;
             color: #555;
             position: sticky;
             top: 0;
-            font-size: 14px;
+            font-size: 15px;
         }
         
         thead th:nth-child(2),
@@ -204,17 +227,17 @@
         }
         
         tbody td {
-            padding: 8px 8px;
+            padding: 12px 10px;
             vertical-align: middle;
         }
         
         input[type="text"],
         input[type="number"] {
             width: 100%;
-            padding: 10px 8px;
+            padding: 12px 10px;
             border: 1px solid #ddd;
             border-radius: 6px;
-            font-size: 16px;
+            font-size: 17px;
             transition: border-color 0.2s;
             box-sizing: border-box;
         }
@@ -242,30 +265,30 @@
         }
         
         input[type="number"].num {
-            padding-right: 8px;
-            padding-left: 6px;
+            padding-right: 10px;
+            padding-left: 8px;
         }
         
         .total-display {
             background: #f0f0f0;
-            padding: 10px 8px;
+            padding: 12px 10px;
             border-radius: 6px;
             text-align: right;
             font-weight: 600;
             color: #555;
-            min-height: 42px;
+            min-height: 48px;
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            font-size: 16px;
+            font-size: 17px;
         }
         
         .btn-delete {
             background: #ff5252;
             color: white;
             border: none;
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 6px;
             cursor: pointer;
             display: flex;
@@ -283,8 +306,8 @@
         }
         
         .trash-icon {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
         }
         
         .toolbar {
@@ -292,7 +315,27 @@
             flex-wrap: wrap;
             gap: 6px;
             justify-content: center;
+            margin-top: 12px;
+        }
+        
+        .list-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .list-total {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
         
         .btn {
@@ -392,6 +435,19 @@
             
             .lists-controls {
                 padding: 12px;
+                flex-wrap: wrap;
+            }
+            
+            .lists-tabs {
+                flex: 1 1 100%;
+                order: 2;
+            }
+            
+            .controls-actions {
+                flex: 1 1 100%;
+                order: 1;
+                justify-content: flex-end;
+                margin-bottom: 8px;
             }
             
             .list-card {
@@ -399,47 +455,64 @@
             }
             
             .list-header {
-                flex-direction: column;
-                align-items: stretch;
+                margin-bottom: 10px;
             }
             
             .list-title {
-                font-size: 18px;
+                font-size: 16px;
+                padding: 5px 8px;
+            }
+            
+            .list-footer {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
             }
             
             .list-total {
                 text-align: center;
-                font-size: 16px;
+                font-size: 18px;
+                padding: 10px 20px;
             }
             
             table {
-                font-size: 15px;
+                font-size: 16px;
             }
             
             thead th {
-                padding: 8px 6px;
-                font-size: 13px;
+                padding: 12px 8px;
+                font-size: 14px;
             }
             
             tbody td {
-                padding: 6px 6px;
+                padding: 10px 8px;
             }
             
             input[type="text"],
             input[type="number"] {
-                padding: 8px 6px;
-                font-size: 15px;
+                padding: 10px 8px;
+                font-size: 16px;
             }
             
             input[type="number"].num {
-                padding-right: 6px;
-                padding-left: 4px;
+                padding-right: 8px;
+                padding-left: 6px;
             }
             
             .total-display {
-                padding: 8px 6px;
-                font-size: 15px;
-                min-height: 38px;
+                padding: 10px 8px;
+                font-size: 16px;
+                min-height: 44px;
+            }
+            
+            .btn-delete {
+                width: 38px;
+                height: 38px;
+            }
+            
+            .trash-icon {
+                width: 18px;
+                height: 18px;
             }
             
             .btn {
@@ -470,44 +543,53 @@
                 font-size: 20px;
             }
             
+            .list-title {
+                font-size: 15px;
+            }
+            
+            .list-total {
+                font-size: 16px;
+                padding: 8px 16px;
+            }
+            
             table {
-                font-size: 14px;
+                font-size: 15px;
             }
             
             thead th {
-                padding: 6px 4px;
-                font-size: 12px;
+                padding: 10px 6px;
+                font-size: 13px;
             }
             
             tbody td {
-                padding: 5px 4px;
+                padding: 8px 6px;
             }
             
             input[type="text"],
             input[type="number"] {
-                padding: 7px 5px;
-                font-size: 14px;
+                padding: 9px 7px;
+                font-size: 15px;
             }
             
             input[type="number"].num {
-                padding-right: 5px;
-                padding-left: 3px;
+                padding-right: 7px;
+                padding-left: 5px;
             }
             
             .total-display {
-                padding: 7px 5px;
-                font-size: 14px;
-                min-height: 36px;
+                padding: 9px 7px;
+                font-size: 15px;
+                min-height: 40px;
             }
             
             .btn-delete {
-                width: 32px;
-                height: 32px;
+                width: 36px;
+                height: 36px;
             }
             
             .trash-icon {
-                width: 16px;
-                height: 16px;
+                width: 18px;
+                height: 18px;
             }
             
             .btn {
@@ -526,11 +608,16 @@
     <div class="container">
         <h1>🛒 Minhas Listas de Compras</h1>
         
-        <div class="lists-controls">
+        <div class="lists-controls" id="listsControls">
             <div class="lists-tabs" id="listsTabs"></div>
-            <button class="btn-add-list" onclick="addNewList()" title="Criar nova lista">
-                ➕ Nova
-            </button>
+            <div class="controls-actions">
+                <button class="btn-toggle-tabs" onclick="toggleTabs()" title="Ocultar/Mostrar abas" id="toggleBtn">
+                    ⬆️ Ocultar
+                </button>
+                <button class="btn-add-list" onclick="addNewList()" title="Criar nova lista">
+                    ➕ Nova
+                </button>
+            </div>
         </div>
         
         <div id="listsContainer"></div>
@@ -540,13 +627,13 @@
             <div class="grand-total-amount" id="grandTotalAll">R$ 0,00</div>
             <div class="toolbar" style="margin-top: 20px;">
                 <button class="btn btn-secondary" onclick="saveAllToFile()" title="Salvar todas as listas">
-                    💾 Salvar Tudo
+                    💾 Salvar
                 </button>
                 <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()" title="Carregar todas as listas">
-                    📂 Carregar Tudo
+                    📂 Carregar
                 </button>
                 <button class="btn btn-info" onclick="generateAllPDF()" title="Gerar PDF de todas as listas">
-                    📄 PDF Completo
+                    📄 PDF
                 </button>
             </div>
         </div>
@@ -558,13 +645,35 @@
         let lists = [];
         let currentListId = null;
         let nextListId = 1;
+        let tabsVisible = true;
         const STORAGE_KEY = 'shoppingListsData';
+        const TABS_VISIBILITY_KEY = 'shoppingListsTabsVisible';
         
         // Registrar Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
                 .then(() => console.log('Service Worker registrado'))
                 .catch(() => console.log('Service Worker não disponível'));
+        }
+        
+        // Toggle visibilidade das abas
+        function toggleTabs() {
+            tabsVisible = !tabsVisible;
+            const tabsEl = document.getElementById('listsTabs');
+            const toggleBtn = document.getElementById('toggleBtn');
+            const controlsEl = document.getElementById('listsControls');
+            
+            if (tabsVisible) {
+                tabsEl.classList.remove('hidden');
+                controlsEl.classList.remove('hidden');
+                toggleBtn.textContent = '⬆️ Ocultar';
+            } else {
+                tabsEl.classList.add('hidden');
+                controlsEl.classList.add('hidden');
+                toggleBtn.textContent = '⬇️ Mostrar';
+            }
+            
+            localStorage.setItem(TABS_VISIBILITY_KEY, tabsVisible);
         }
         
         // Carregar dados do localStorage ao iniciar
@@ -577,18 +686,35 @@
                     nextListId = data.nextListId || 1;
                     currentListId = data.currentListId || null;
                 }
+                
+                // Carregar visibilidade das abas
+                const savedVisibility = localStorage.getItem(TABS_VISIBILITY_KEY);
+                if (savedVisibility !== null) {
+                    tabsVisible = savedVisibility === 'true';
+                }
             } catch (e) {
                 console.error('Erro ao carregar do localStorage:', e);
                 lists = [];
             }
             
             if (lists.length === 0) {
-                addNewList();
+                createInitialList(); // Cria primeira lista sem prompt
             } else {
                 if (!currentListId || !lists.find(l => l.id === currentListId)) {
                     currentListId = lists[0].id;
                 }
                 renderLists();
+                
+                // Aplicar visibilidade das abas
+                if (!tabsVisible) {
+                    const tabsEl = document.getElementById('listsTabs');
+                    const toggleBtn = document.getElementById('toggleBtn');
+                    const controlsEl = document.getElementById('listsControls');
+                    
+                    tabsEl.classList.add('hidden');
+                    controlsEl.classList.add('hidden');
+                    toggleBtn.textContent = '⬇️ Mostrar';
+                }
             }
         }
         
@@ -613,6 +739,20 @@
             const newList = {
                 id: nextListId++,
                 name: name.trim(),
+                items: [{ produto: '', qtd: '', valor: '' }]
+            };
+            
+            lists.push(newList);
+            currentListId = newList.id;
+            saveToLocalStorage();
+            renderLists();
+        }
+        
+        // Criar primeira lista automaticamente sem prompt
+        function createInitialList() {
+            const newList = {
+                id: nextListId++,
+                name: `Lista ${nextListId - 1}`,
                 items: [{ produto: '', qtd: '', valor: '' }]
             };
             
@@ -699,7 +839,6 @@
                         <div class="list-title" onclick="renameList(${list.id})" title="Clique para renomear">
                             ${escapeHtml(list.name)}
                         </div>
-                        <div class="list-total" id="total-${list.id}">R$ 0,00</div>
                     </div>
                     
                     <div class="table-wrapper">
@@ -718,13 +857,16 @@
                         </table>
                     </div>
                     
-                    <div class="toolbar">
-                        <button class="btn btn-primary" onclick="addRow(${list.id})" title="Adicionar novo item">
-                            ➕ Item
-                        </button>
-                        <button class="btn btn-danger" onclick="clearList(${list.id})" title="Limpar esta lista">
-                            🗑️ Limpar
-                        </button>
+                    <div class="list-footer">
+                        <div class="toolbar">
+                            <button class="btn btn-primary" onclick="addRow(${list.id})" title="Adicionar novo item">
+                                ➕ Item
+                            </button>
+                            <button class="btn btn-danger" onclick="clearList(${list.id})" title="Limpar esta lista">
+                                🗑️ Limpar
+                            </button>
+                        </div>
+                        <div class="list-total" id="total-${list.id}">R$ 0,00</div>
                     </div>
                 `;
                 
