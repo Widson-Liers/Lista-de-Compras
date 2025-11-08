@@ -206,7 +206,7 @@
         
         thead th {
             background: #f5f5f5;
-            padding: 14px 10px;
+            padding: 14px 6px;
             text-align: left;
             font-weight: 600;
             color: #555;
@@ -227,14 +227,14 @@
         }
         
         tbody td {
-            padding: 12px 10px;
+            padding: 12px 6px;
             vertical-align: middle;
         }
         
         input[type="text"],
         input[type="number"] {
             width: 100%;
-            padding: 12px 10px;
+            padding: 12px 8px;
             border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 17px;
@@ -265,13 +265,13 @@
         }
         
         input[type="number"].num {
-            padding-right: 10px;
-            padding-left: 8px;
+            padding-right: 8px;
+            padding-left: 6px;
         }
         
         .total-display {
             background: #f0f0f0;
-            padding: 12px 10px;
+            padding: 12px 8px;
             border-radius: 6px;
             text-align: right;
             font-weight: 600;
@@ -287,8 +287,8 @@
             background: #ff5252;
             color: white;
             border: none;
-            width: 40px;
-            height: 40px;
+            width: 34px;
+            height: 34px;
             border-radius: 6px;
             cursor: pointer;
             display: flex;
@@ -306,8 +306,8 @@
         }
         
         .trash-icon {
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
         }
         
         .toolbar {
@@ -583,13 +583,13 @@
             }
             
             .btn-delete {
-                width: 36px;
-                height: 36px;
+                width: 32px;
+                height: 32px;
             }
             
             .trash-icon {
-                width: 18px;
-                height: 18px;
+                width: 15px;
+                height: 15px;
             }
             
             .btn {
@@ -651,9 +651,9 @@
         
         // Registrar Service Worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(() => console.log('Service Worker registrado'))
-                .catch(() => console.log('Service Worker não disponível'));
+            navigator.serviceWorker.register('sw.js').catch(() => {
+                // Silenciosamente ignora se SW não estiver disponível
+            });
         }
         
         // Toggle visibilidade das abas
@@ -697,9 +697,8 @@
                 lists = [];
             }
             
-            if (lists.length === 0) {
-                createInitialList(); // Cria primeira lista sem prompt
-            } else {
+            // Não criar lista automaticamente - usuário decide
+            if (lists.length > 0) {
                 if (!currentListId || !lists.find(l => l.id === currentListId)) {
                     currentListId = lists[0].id;
                 }
@@ -715,6 +714,9 @@
                     controlsEl.classList.add('hidden');
                     toggleBtn.textContent = '⬇️ Mostrar';
                 }
+            } else {
+                // Renderizar interface vazia
+                renderLists();
             }
         }
         
@@ -765,18 +767,19 @@
         // Excluir lista
         function deleteList(listId) {
             if (lists.length === 1) {
-                alert('Você precisa ter pelo menos uma lista!');
-                return;
-            }
-            
-            if (!confirm('Deseja realmente excluir esta lista?')) {
-                return;
+                if (!confirm('Você está excluindo a última lista. Deseja continuar?')) {
+                    return;
+                }
+            } else {
+                if (!confirm('Deseja realmente excluir esta lista?')) {
+                    return;
+                }
             }
             
             lists = lists.filter(l => l.id !== listId);
             
             if (currentListId === listId) {
-                currentListId = lists[0].id;
+                currentListId = lists.length > 0 ? lists[0].id : null;
             }
             
             saveToLocalStorage();
@@ -808,6 +811,16 @@
             const tabsContainer = document.getElementById('listsTabs');
             tabsContainer.innerHTML = '';
             
+            if (lists.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.style.padding = '8px 12px';
+                emptyMsg.style.color = '#999';
+                emptyMsg.style.fontSize = '14px';
+                emptyMsg.textContent = 'Nenhuma lista criada. Clique em "➕ Nova" para começar.';
+                tabsContainer.appendChild(emptyMsg);
+                return;
+            }
+            
             lists.forEach(list => {
                 const tab = document.createElement('button');
                 tab.className = `tab-btn ${list.id === currentListId ? 'active' : ''}`;
@@ -817,7 +830,7 @@
                 
                 tab.innerHTML = `
                     <span>${escapeHtml(list.name)}</span>
-                    ${lists.length > 1 ? `<span class="tab-close" onclick="event.stopPropagation(); deleteList(${list.id})">×</span>` : ''}
+                    <span class="tab-close" onclick="event.stopPropagation(); deleteList(${list.id})">×</span>
                 `;
                 
                 tabsContainer.appendChild(tab);
@@ -842,14 +855,14 @@
                     </div>
                     
                     <div class="table-wrapper">
-                        <table>
+                        <table id="shoppingTable">
                             <thead>
                                 <tr>
-                                    <th style="width: 50%;">Produto</th>
+                                    <th style="width: 45%;">Produto</th>
                                     <th style="width: 15%;">Qtd</th>
-                                    <th style="width: 15%;">Valor</th>
+                                    <th style="width: 18%;">Valor</th>
                                     <th style="width: 15%;">Total</th>
-                                    <th style="width: 5%;"></th>
+                                    <th style="width: 7%;"></th>
                                 </tr>
                             </thead>
                             <tbody id="tableBody-${list.id}">
@@ -903,7 +916,7 @@
                 const row = document.createElement('tr');
                 
                 const total = (item.qtd && item.valor) ? (parseFloat(item.qtd) * parseFloat(item.valor)) : '';
-                const totalDisplay = total !== '' ? `R$ ${total.toFixed(2).replace('.', ',')}` : '';
+                const totalDisplay = total !== '' ? total.toFixed(2).replace('.', ',') : '';
                 
                 row.innerHTML = `
                     <td>
@@ -1004,7 +1017,7 @@
             
             if (totalEl) {
                 const total = (item.qtd && item.valor) ? (parseFloat(item.qtd) * parseFloat(item.valor)) : '';
-                totalEl.textContent = total !== '' ? `R$ ${total.toFixed(2).replace('.', ',')}` : '';
+                totalEl.textContent = total !== '' ? total.toFixed(2).replace('.', ',') : '';
             }
             
             updateListTotal(listId);
